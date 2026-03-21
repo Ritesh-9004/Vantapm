@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32PM — Folder Structure & File Lifecycle</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Syne:wght@600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--border2:#484f58;
+  --green:#3fb950;--green2:#238636;--green-dim:rgba(63,185,80,0.15);
+  --blue:#58a6ff;--blue-dim:rgba(88,166,255,0.12);
+  --amber:#e3b341;--amber-dim:rgba(227,179,65,0.12);
+  --red:#f85149;--red-dim:rgba(248,81,73,0.12);
+  --purple:#bc8cff;--purple-dim:rgba(188,140,255,0.12);
+  --teal:#39d353;--teal-dim:rgba(57,211,83,0.1);
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --mono:'IBM Plex Mono',monospace;
+  --display:'Syne',sans-serif;
+  --body:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* TOP NAV */
+.topnav{display:flex;align-items:center;gap:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:100;overflow-x:auto}
+.logo{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--green);padding:13px 18px 13px 0;border-right:1px solid var(--border);margin-right:10px;flex-shrink:0}
+.logo em{color:var(--text2);font-style:normal}
+.ntab{padding:13px 14px;font-size:12px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s}
+.ntab:hover{color:var(--text)}
+.ntab.on{color:var(--green);border-bottom-color:var(--green)}
+.panel{display:none}.panel.show{display:block}
+
+/* LAYOUT */
+.wrap{max-width:1100px;margin:0 auto;padding:32px 20px}
+.page-title{font-family:var(--display);font-size:26px;font-weight:800;color:var(--text);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
+.mono-label{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--green);text-transform:uppercase;margin-bottom:8px}
+
+/* TREE */
+.tree-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.tree-header{padding:12px 18px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.tree-title{font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px}
+.tree-dot{width:10px;height:10px;border-radius:50%}
+.td-red{background:#ff5f57}.td-amber{background:#febc2e}.td-green{background:#28c840}
+.tree-body{padding:16px 20px;font-family:var(--mono);font-size:12px;line-height:2.1;overflow-x:auto}
+.tree-row{display:flex;align-items:flex-start;gap:0;white-space:nowrap}
+.tree-indent{color:var(--text3);user-select:none}
+.tree-icon{margin-right:6px;width:16px;text-align:center;flex-shrink:0}
+.tree-name{cursor:default}
+.tn-dir{color:var(--blue);font-weight:500}
+.tn-toml{color:var(--amber)}
+.tn-lock{color:var(--purple)}
+.tn-json{color:var(--amber)}
+.tn-c{color:var(--green)}
+.tn-h{color:var(--teal)}
+.tn-cmake{color:var(--red)}
+.tn-txt{color:var(--text2)}
+.tn-bin{color:var(--red)}
+.tn-gen{color:var(--purple)}
+.tree-comment{color:var(--text3);font-style:italic;margin-left:12px;font-size:11px}
+.tree-badge{font-size:9px;font-weight:600;padding:1px 6px;border-radius:4px;margin-left:8px;vertical-align:middle}
+.tb-new{background:var(--green-dim);color:var(--green)}
+.tb-gen{background:var(--purple-dim);color:var(--purple)}
+.tb-lock{background:var(--amber-dim);color:var(--amber)}
+.tb-cache{background:var(--blue-dim);color:var(--blue)}
+.tb-never{background:var(--red-dim);color:var(--red)}
+.collapsible{cursor:pointer;user-select:none}
+.collapsible:hover .tn-dir{text-decoration:underline}
+.subtree{overflow:hidden;transition:max-height .25s ease}
+.subtree.closed{max-height:0}
+.subtree.open{max-height:2000px}
+
+/* LIFECYCLE */
+.life-steps{display:flex;flex-direction:column;gap:0;margin-bottom:20px}
+.life-step{display:flex;gap:0}
+.life-left{display:flex;flex-direction:column;align-items:center;width:44px;flex-shrink:0}
+.life-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;z-index:1}
+.life-line{width:2px;flex:1;background:var(--border);margin:4px 0}
+.life-right{flex:1;padding:0 0 24px 16px}
+.life-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;font-family:var(--display)}
+.life-sub{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6}
+.life-files{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.life-file{font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid}
+.lf-create{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.lf-modify{background:var(--amber-dim);border-color:var(--amber);color:var(--amber)}
+.lf-delete{background:var(--red-dim);border-color:var(--red);color:var(--red)}
+.lf-read{background:var(--blue-dim);border-color:var(--blue);color:var(--blue)}
+.lf-download{background:var(--purple-dim);border-color:var(--purple);color:var(--purple)}
+.cmd-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:12px;color:var(--green)}
+.cmd-box em{color:var(--text3);font-style:normal}
+
+/* FILE EXPLAIN */
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:20px}
+.file-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.fc-name{font-family:var(--mono);font-size:13px;font-weight:600;margin-bottom:4px}
+.fc-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;display:inline-block;margin-bottom:8px;letter-spacing:0.5px}
+.fcb-yours{background:var(--green-dim);color:var(--green)}
+.fcb-gen{background:var(--purple-dim);color:var(--purple)}
+.fcb-cache{background:var(--blue-dim);color:var(--blue)}
+.fcb-never{background:var(--red-dim);color:var(--red)}
+.fc-body{font-size:12px;color:var(--text2);line-height:1.65}
+.fc-rule{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:8px;padding:4px 8px;background:var(--bg3);border-radius:4px}
+
+/* CACHE */
+.cache-flow{display:grid;grid-template-columns:1fr 40px 1fr 40px 1fr;gap:0;align-items:center;margin:16px 0}
+.cf-box{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.cf-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.cf-path{font-family:var(--mono);font-size:10px;color:var(--text3);word-break:break-all}
+.cf-arrow{text-align:center;color:var(--text3);font-size:18px}
+
+/* COMPARE */
+.before-after{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.ba-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.ba-header{padding:10px 16px;font-size:12px;font-weight:600;font-family:var(--mono)}
+.ba-before .ba-header{background:var(--red-dim);color:var(--red);border-bottom:1px solid var(--border)}
+.ba-after .ba-header{background:var(--green-dim);color:var(--green);border-bottom:1px solid var(--border)}
+.ba-body{padding:14px 16px;font-family:var(--mono);font-size:11px;line-height:2;color:var(--text2)}
+
+/* GITIGNORE */
+.gitignore-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px 20px;font-family:var(--mono);font-size:12px;line-height:2;color:var(--text2)}
+.gi-comment{color:var(--text3)}
+.gi-path{color:var(--amber)}
+
+/* GLOBAL CACHE */
+.gc-table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0}
+.gc-table th{padding:9px 12px;background:var(--bg3);font-weight:500;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:11px}
+.gc-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.gc-table tr:last-child td{border-bottom:none}
+
+/* SECTION DIVIDER */
+.sdiv{height:1px;background:var(--border);margin:28px 0}
+h2{font-family:var(--display);font-size:18px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+h2::after{content:'';flex:1;height:1px;background:var(--border)}
+h3{font-size:14px;font-weight:600;color:var(--text);margin:16px 0 10px}
+
+.tip{background:var(--blue-dim);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:var(--text2);margin:12px 0;line-height:1.7}
+.tip strong{color:var(--text)}
+.warn{background:var(--amber-dim);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:var(--text2);margin:12px 0}
+.warn strong{color:var(--amber)}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="logo">esp32<em>pm</em></div>
+  <div class="ntab on" onclick="show('p1',this)">Project Structure</div>
+  <div class="ntab" onclick="show('p2',this)">What Gets Downloaded</div>
+  <div class="ntab" onclick="show('p3',this)">File-by-File Explained</div>
+  <div class="ntab" onclick="show('p4',this)">Global Cache</div>
+  <div class="ntab" onclick="show('p5',this)">Lifecycle (init→build)</div>
+  <div class="ntab" onclick="show('p6',this)">Git Rules</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!--  PANEL 1 — PROJECT STRUCTURE                      -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="panel show" id="p1">
+<div class="wrap">
+  <div class="page-title">Project Folder Structure</div>
+  <div class="page-sub">Exactly what your ESP32 project looks like after esp32pm sets everything up</div>
+
+  <div class="before-after">
+    <div class="ba-card ba-before">
+      <div class="ba-header">✗ BEFORE esp32pm (manual chaos)</div>
+      <div class="ba-body">
+my_project/<br>
+├── main.cpp<br>
+├── <span style="color:var(--red)">libraries/</span>           <span style="color:var(--text3)"># manually copied folders</span><br>
+│   ├── BME280/            <span style="color:var(--text3)"># which version? unknown</span><br>
+│   ├── FastLED-3.5.0/     <span style="color:var(--text3)"># ZIP extracted manually</span><br>
+│   └── PubSubClient/      <span style="color:var(--text3)"># from github.com manually</span><br>
+├── <span style="color:var(--red)">Makefile</span>              <span style="color:var(--text3)"># hand-written, fragile</span><br>
+└── README.md              <span style="color:var(--text3)"># "ask me to set this up"</span>
+      </div>
+    </div>
+    <div class="ba-card ba-after">
+      <div class="ba-header">✓ AFTER esp32pm (clean, reproducible)</div>
+      <div class="ba-body">
+my_project/<br>
+├── <span style="color:var(--amber)">esp32pm.toml</span>          <span style="color:var(--text3)"># YOU write this</span><br>
+├── <span style="color:var(--purple)">esp32pm.lock</span>          <span style="color:var(--text3)"># AUTO-generated, commit it</span><br>
+├── src/                   <span style="color:var(--text3)"># YOUR code only</span><br>
+│   └── main.cpp<br>
+├── include/               <span style="color:var(--text3)"># YOUR headers only</span><br>
+├── <span style="color:var(--purple)">.esp32pm/</span>             <span style="color:var(--text3)"># AUTO-managed, git-ignore</span><br>
+│   ├── packages/          <span style="color:var(--text3)"># downloaded libs live here</span><br>
+│   └── cmake/             <span style="color:var(--text3)"># generated CMake glue</span><br>
+└── build/                 <span style="color:var(--text3)"># compiled output</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Complete project tree — fully expanded</h2>
+
+  <div class="tree-wrap">
+    <div class="tree-header">
+      <div class="tree-title">
+        <div class="tree-dot td-red"></div>
+        <div class="tree-dot td-amber"></div>
+        <div class="tree-dot td-green"></div>
+        &nbsp;my_weather_station/
+      </div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">click folders to expand/collapse</div>
+    </div>
+    <div class="tree-body" id="main-tree">
+
+      <!-- ROOT FILES -->
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-toml tree-name">esp32pm.toml</span><span class="tree-badge tb-new">YOU WRITE</span><span class="tree-comment">project config — board, deps, budget</span></div>
+      <div class="tree-row"><span class="tree-icon">🔒</span><span class="tn-lock tree-name">esp32pm.lock</span><span class="tree-badge tb-lock">COMMIT THIS</span><span class="tree-comment">exact versions locked — never edit by hand</span></div>
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-txt tree-name">.gitignore</span><span class="tree-badge tb-new">YOU WRITE</span><span class="tree-comment">ignores .esp32pm/ and build/</span></div>
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-txt tree-name">README.md</span><span class="tree-badge tb-new">YOU WRITE</span></div>
+
+      <!-- SRC -->
+      <div class="tree-row" style="margin-top:6px"><span class="collapsible" onclick="toggleTree('src')"><span class="tree-icon">📁</span><span class="tn-dir">src/</span></span><span class="tree-comment">← YOUR CODE lives here</span></div>
+      <div class="subtree open" id="src">
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-c">main.cpp</span><span class="tree-badge tb-new">YOU WRITE</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-c">sensor.cpp</span><span class="tree-badge tb-new">YOU WRITE</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-c">wifi_manager.cpp</span><span class="tree-badge tb-new">YOU WRITE</span></div>
+        <div class="tree-row"><span class="tree-indent">└── </span><span class="tree-icon">📄</span><span class="tn-c">mqtt_client.cpp</span><span class="tree-badge tb-new">YOU WRITE</span></div>
+      </div>
+
+      <!-- INCLUDE -->
+      <div class="tree-row"><span class="collapsible" onclick="toggleTree('inc')"><span class="tree-icon">📁</span><span class="tn-dir">include/</span></span><span class="tree-comment">← YOUR headers</span></div>
+      <div class="subtree open" id="inc">
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-h">sensor.h</span><span class="tree-badge tb-new">YOU WRITE</span></div>
+        <div class="tree-row"><span class="tree-indent">└── </span><span class="tree-icon">📄</span><span class="tn-h">config.h</span><span class="tree-badge tb-new">YOU WRITE</span></div>
+      </div>
+
+      <!-- .ESP32PM (the magic folder) -->
+      <div class="tree-row" style="margin-top:4px"><span class="collapsible" onclick="toggleTree('pm')"><span class="tree-icon">📁</span><span class="tn-dir">.esp32pm/</span></span><span class="tree-badge tb-gen">AUTO-MANAGED</span><span class="tree-comment">← NEVER EDIT MANUALLY — git-ignored</span></div>
+      <div class="subtree open" id="pm">
+
+        <!-- packages -->
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="collapsible" onclick="toggleTree('pkgs')"><span class="tree-icon">📁</span><span class="tn-dir">packages/</span></span><span class="tree-comment">downloaded + extracted libraries</span></div>
+        <div class="subtree open" id="pkgs">
+          <!-- bme280 -->
+          <div class="tree-row"><span class="tree-indent">│   │   </span><span class="collapsible" onclick="toggleTree('bme')"><span class="tree-icon">📁</span><span class="tn-dir">bme280_idf@2.4.1/</span></span><span class="tree-badge tb-cache">DOWNLOADED</span></div>
+          <div class="subtree open" id="bme">
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📄</span><span class="tn-json">esp32pm.json</span><span class="tree-comment">package metadata</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📁</span><span class="tn-dir">src/</span><span class="tree-comment">library source files</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   │   │   </span><span class="tree-icon">📄</span><span class="tn-c">bme280.c</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   │   │   </span><span class="tree-icon">📄</span><span class="tn-h">bme280.h</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📁</span><span class="tn-dir">include/</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📄</span><span class="tn-cmake">CMakeLists.txt</span><span class="tree-comment">library build definition</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📄</span><span class="tn-txt">LICENSE</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   └── </span><span class="tree-icon">📄</span><span class="tn-txt">README.md</span></div>
+          </div>
+          <!-- fastled -->
+          <div class="tree-row"><span class="tree-indent">│   │   </span><span class="collapsible" onclick="toggleTree('fastled')"><span class="tree-icon">📁</span><span class="tn-dir">FastLED_ESP32@3.7.2/</span></span><span class="tree-badge tb-cache">DOWNLOADED</span></div>
+          <div class="subtree open" id="fastled">
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📄</span><span class="tn-json">esp32pm.json</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📁</span><span class="tn-dir">src/</span><span class="tree-comment">FastLED source (large)</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📄</span><span class="tn-cmake">CMakeLists.txt</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   └── </span><span class="tree-icon">📄</span><span class="tn-txt">library.properties</span><span class="tree-comment">Arduino compat metadata</span></div>
+          </div>
+          <!-- mqtt -->
+          <div class="tree-row"><span class="tree-indent">│   │   </span><span class="collapsible" onclick="toggleTree('mqtt')"><span class="tree-icon">📁</span><span class="tn-dir">esp32_mqtt@1.2.0/</span></span><span class="tree-badge tb-cache">DOWNLOADED</span></div>
+          <div class="subtree open" id="mqtt">
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📄</span><span class="tn-json">esp32pm.json</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📁</span><span class="tn-dir">src/</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   └── </span><span class="tree-icon">📄</span><span class="tn-cmake">CMakeLists.txt</span></div>
+          </div>
+          <!-- transitive dep -->
+          <div class="tree-row"><span class="tree-indent">│   │   </span><span class="collapsible" onclick="toggleTree('json')"><span class="tree-icon">📁</span><span class="tn-dir">ArduinoJSON@7.0.4/</span></span><span class="tree-badge tb-cache">DOWNLOADED</span><span class="tree-comment">← transitive dep (auto-resolved)</span></div>
+          <div class="subtree closed" id="json">
+            <div class="tree-row"><span class="tree-indent">│   │   │   </span><span class="tree-icon">📄</span><span class="tn-json">esp32pm.json</span></div>
+            <div class="tree-row"><span class="tree-indent">│   │   └── </span><span class="tree-icon">📁</span><span class="tn-dir">src/</span></div>
+          </div>
+        </div>
+
+        <!-- cmake generated -->
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="collapsible" onclick="toggleTree('cmake')"><span class="tree-icon">📁</span><span class="tn-dir">cmake/</span></span><span class="tree-comment">generated CMake glue — never edit</span></div>
+        <div class="subtree open" id="cmake">
+          <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📄</span><span class="tn-cmake">esp32pm_deps.cmake</span><span class="tree-badge tb-gen">GENERATED</span><span class="tree-comment">adds all libs to CMake</span></div>
+          <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📄</span><span class="tn-cmake">toolchain_xtensa.cmake</span><span class="tree-badge tb-gen">GENERATED</span><span class="tree-comment">compiler config</span></div>
+          <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📄</span><span class="tn-cmake">CMakeLists.txt</span><span class="tree-badge tb-gen">GENERATED</span><span class="tree-comment">root CMake for your project</span></div>
+          <div class="tree-row"><span class="tree-indent">│   └── </span><span class="tree-icon">📄</span><span class="tn-cmake">memory_report.cmake</span><span class="tree-badge tb-gen">GENERATED</span><span class="tree-comment">flash+ram budget check</span></div>
+        </div>
+
+        <!-- toolchains -->
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="collapsible" onclick="toggleTree('tc')"><span class="tree-icon">📁</span><span class="tn-dir">toolchains/</span></span><span class="tree-comment">downloaded compiler (symlink to global cache)</span></div>
+        <div class="subtree closed" id="tc">
+          <div class="tree-row"><span class="tree-indent">│   └── </span><span class="tree-icon">🔗</span><span class="tn-dir">xtensa-esp32s3-gcc@12.2.0/</span><span class="tree-comment">→ ~/.esp32pm/toolchains/...</span></div>
+        </div>
+
+        <!-- metadata -->
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-json">install_state.json</span><span class="tree-badge tb-gen">GENERATED</span><span class="tree-comment">tracks what's installed + hashes</span></div>
+        <div class="tree-row"><span class="tree-indent">└── </span><span class="tree-icon">📄</span><span class="tn-json">memory_snapshot.json</span><span class="tree-badge tb-gen">GENERATED</span><span class="tree-comment">last measured flash/ram per package</span></div>
+      </div>
+
+      <!-- BUILD -->
+      <div class="tree-row" style="margin-top:4px"><span class="collapsible" onclick="toggleTree('build')"><span class="tree-icon">📁</span><span class="tn-dir">build/</span></span><span class="tree-badge tb-never">GIT-IGNORED</span><span class="tree-comment">compiled output — never commit</span></div>
+      <div class="subtree closed" id="build">
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-bin">firmware.bin</span><span class="tree-comment">← flash this to your ESP32</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-bin">firmware.elf</span><span class="tree-comment">for debugging</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-bin">firmware.map</span><span class="tree-comment">symbol map (memory layout)</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-txt">memory_report.txt</span><span class="tree-comment">flash+ram breakdown after build</span></div>
+        <div class="tree-row"><span class="tree-indent">└── </span><span class="tree-icon">📁</span><span class="tn-dir">CMakeFiles/</span><span class="tree-comment">cmake internals</span></div>
+      </div>
+
+    </div><!-- tree-body -->
+  </div><!-- tree-wrap -->
+
+  <div class="tip"><strong>Key rule:</strong> You only write files in <code style="font-family:var(--mono);font-size:11px;background:rgba(88,166,255,0.1);padding:1px 5px;border-radius:3px">src/</code>, <code style="font-family:var(--mono);font-size:11px;background:rgba(88,166,255,0.1);padding:1px 5px;border-radius:3px">include/</code>, <code style="font-family:var(--mono);font-size:11px;background:rgba(88,166,255,0.1);padding:1px 5px;border-radius:3px">esp32pm.toml</code>, and <code style="font-family:var(--mono);font-size:11px;background:rgba(88,166,255,0.1);padding:1px 5px;border-radius:3px">esp32pm.lock</code>. Everything inside <code style="font-family:var(--mono);font-size:11px;background:rgba(88,166,255,0.1);padding:1px 5px;border-radius:3px">.esp32pm/</code> and <code style="font-family:var(--mono);font-size:11px;background:rgba(88,166,255,0.1);padding:1px 5px;border-radius:3px">build/</code> is auto-managed — touch it and things break.</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!--  PANEL 2 — WHAT GETS DOWNLOADED                   -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="panel" id="p2">
+<div class="wrap">
+  <div class="page-title">What Gets Downloaded</div>
+  <div class="page-sub">When you run <span style="font-family:var(--mono);color:var(--green)">esp32pm install</span> — exactly what flows from the internet onto your disk</div>
+
+  <h2>Download flow</h2>
+
+  <div class="cache-flow">
+    <div class="cf-box" style="border-color:var(--blue)">
+      <div style="font-size:20px;margin-bottom:8px">🌐</div>
+      <div class="cf-title" style="color:var(--blue)">Registry Server</div>
+      <div class="cf-path">registry.esp32pm.io<br>metadata + tarball URLs</div>
+    </div>
+    <div class="cf-arrow">→</div>
+    <div class="cf-box" style="border-color:var(--purple)">
+      <div style="font-size:20px;margin-bottom:8px">💾</div>
+      <div class="cf-title" style="color:var(--purple)">Global Cache</div>
+      <div class="cf-path">~/.esp32pm/<br>shared across ALL projects</div>
+    </div>
+    <div class="cf-arrow">→</div>
+    <div class="cf-box" style="border-color:var(--green)">
+      <div style="font-size:20px;margin-bottom:8px">📁</div>
+      <div class="cf-title" style="color:var(--green)">Project Folder</div>
+      <div class="cf-path">my_project/.esp32pm/<br>symlinks or copies</div>
+    </div>
+  </div>
+
+  <h2>For each package — exactly 4 things download</h2>
+
+  <div class="file-grid">
+    <div class="file-card">
+      <div class="fc-name" style="color:var(--amber)">esp32pm.json</div>
+      <div class="fc-badge fcb-cache">METADATA — ~2KB</div>
+      <div class="fc-body">Package manifest. Contains: name, version, declared targets, framework tags, memory footprint, dependencies list, peripheral declarations. Downloaded first, before source code. Used to resolve dependency tree without downloading everything.</div>
+      <div class="fc-rule">downloads instantly — tiny JSON file</div>
+    </div>
+    <div class="file-card">
+      <div class="fc-name" style="color:var(--green)">source.tar.gz</div>
+      <div class="fc-badge fcb-cache">SOURCE CODE — 10KB–5MB</div>
+      <div class="fc-body">The actual library source code. Contains: all .c / .cpp / .h files, the library's own CMakeLists.txt, examples/, LICENSE, README.md. Extracted into .esp32pm/packages/name@version/ automatically.</div>
+      <div class="fc-rule">extracted after download — never left as .tar.gz</div>
+    </div>
+    <div class="file-card">
+      <div class="fc-name" style="color:var(--blue)">checksum.sha256</div>
+      <div class="fc-badge fcb-cache">INTEGRITY — 64 bytes</div>
+      <div class="fc-body">SHA256 hash of the source tarball. Downloaded alongside every package. Verified before extraction — if hash doesn't match, install aborts with a clear error. Prevents tampered or corrupted packages.</div>
+      <div class="fc-rule">verified before extraction — security critical</div>
+    </div>
+    <div class="file-card">
+      <div class="fc-name" style="color:var(--purple)">toolchain tarball</div>
+      <div class="fc-badge fcb-cache">COMPILER — 200MB–1GB</div>
+      <div class="fc-body">Downloaded ONCE per toolchain version and cached globally. xtensa-esp32s3-gcc@12.2.0 = ~400MB. ARM GCC for bare-metal = ~280MB. If another project on your machine uses the same toolchain version, it reuses the cache — no re-download.</div>
+      <div class="fc-rule">heaviest download — cached globally, never per-project</div>
+    </div>
+  </div>
+
+  <h2>What does NOT download</h2>
+  <div class="file-grid">
+    <div class="file-card" style="border-color:var(--red)">
+      <div class="fc-name" style="color:var(--red)">Examples & Tests (optional)</div>
+      <div class="fc-badge fcb-never">OPTIONAL — skipped by default</div>
+      <div class="fc-body">Library examples and test files are NOT downloaded by default. Only downloaded if you explicitly run <span style="font-family:var(--mono);font-size:11px">esp32pm install --with-examples</span>. Saves disk space when you just need the library to work.</div>
+    </div>
+    <div class="file-card" style="border-color:var(--red)">
+      <div class="fc-name" style="color:var(--red)">Docs / Wiki</div>
+      <div class="fc-badge fcb-never">NEVER DOWNLOADED</div>
+      <div class="fc-body">HTML documentation, GitHub wikis, Doxygen output — never downloaded. The website serves docs online. No reason to put megabytes of HTML on your disk. <span style="font-family:var(--mono);font-size:11px">esp32pm docs bme280</span> opens the browser instead.</div>
+    </div>
+    <div class="file-card" style="border-color:var(--red)">
+      <div class="fc-name" style="color:var(--red)">Dev dependencies (of libraries)</div>
+      <div class="fc-badge fcb-never">NEVER DOWNLOADED</div>
+      <div class="fc-body">If bme280_idf uses unity_test for its own testing — you don't need that. Dev dependencies of your dependencies are never installed. Only runtime dependencies are resolved and downloaded.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!--  PANEL 3 — FILE BY FILE EXPLAINED                 -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="panel" id="p3">
+<div class="wrap">
+  <div class="page-title">Every File — Explained</div>
+  <div class="page-sub">What each file is, who creates it, what's inside it, and the rules around it</div>
+
+  <h2>Files YOU create and own</h2>
+  <div class="file-grid">
+    <div class="file-card" style="border-color:var(--amber)">
+      <div class="fc-name" style="color:var(--amber)">esp32pm.toml</div>
+      <div class="fc-badge fcb-yours">YOU WRITE — ALWAYS COMMIT</div>
+      <div class="fc-body">The heart of your project. Declares: board, chip, framework, toolchain version, dependencies with semver ranges, memory budget limits. This is the ONLY config file you manually write. Everything else is generated from it.</div>
+      <div class="fc-rule">✓ commit  ✓ edit freely  ✗ never auto-edited by esp32pm</div>
+    </div>
+    <div class="file-card" style="border-color:var(--purple)">
+      <div class="fc-name" style="color:var(--purple)">esp32pm.lock</div>
+      <div class="fc-badge" style="background:var(--amber-dim);color:var(--amber);font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;display:inline-block;margin-bottom:8px">AUTO-GENERATED — ALWAYS COMMIT</div>
+      <div class="fc-body">Generated by esp32pm after resolving your dependency tree. Contains EXACT versions of every package including transitive deps. Your teammate runs <span style="font-family:var(--mono);font-size:11px">esp32pm install</span> and gets bit-identical packages. Never edit by hand.</div>
+      <div class="fc-rule">✓ commit  ✗ never edit manually  ✓ regenerated by esp32pm update</div>
+    </div>
+    <div class="file-card" style="border-color:var(--green)">
+      <div class="fc-name" style="color:var(--green)">src/main.cpp</div>
+      <div class="fc-badge fcb-yours">YOU WRITE</div>
+      <div class="fc-body">Your firmware code. You #include library headers normally — no path hacks. esp32pm configures CMake so that <span style="font-family:var(--mono);font-size:11px">#include "bme280.h"</span> just works. Your code stays clean — no ../../../libraries/BME280/src nonsense.</div>
+      <div class="fc-rule">✓ commit  ✓ edit freely</div>
+    </div>
+    <div class="file-card" style="border-color:var(--green)">
+      <div class="fc-name" style="color:var(--green)">include/config.h</div>
+      <div class="fc-badge fcb-yours">YOU WRITE</div>
+      <div class="fc-body">Your project-wide configuration. Pin definitions, WiFi credentials (use env vars!), feature flags. These are YOUR headers — not library headers. Kept separate from src/ so any .cpp can include them easily.</div>
+      <div class="fc-rule">✓ commit (except secrets — use .env)</div>
+    </div>
+  </div>
+
+  <h2>Files esp32pm auto-generates (never touch)</h2>
+  <div class="file-grid">
+    <div class="file-card" style="border-color:var(--purple)">
+      <div class="fc-name" style="color:var(--purple)">.esp32pm/cmake/esp32pm_deps.cmake</div>
+      <div class="fc-badge fcb-gen">AUTO-GENERATED</div>
+      <div class="fc-body">The CMake glue file. Contains <span style="font-family:var(--mono);font-size:11px">add_subdirectory()</span> calls for every installed package, sets include paths, links libraries. Regenerated every <span style="font-family:var(--mono);font-size:11px">esp32pm install</span>. Your CMakeLists.txt just includes this one file.</div>
+      <div class="fc-rule">✗ git-ignored  ✗ never edit  ✓ auto-regenerated</div>
+    </div>
+    <div class="file-card" style="border-color:var(--purple)">
+      <div class="fc-name" style="color:var(--purple)">.esp32pm/cmake/toolchain_xtensa.cmake</div>
+      <div class="fc-badge fcb-gen">AUTO-GENERATED</div>
+      <div class="fc-body">CMake toolchain file. Tells CMake which compiler to use, target architecture, CPU flags (-mcpu=esp32s3, -mfpu=...), sysroot path. Generated from your target.chip + target.toolchain in esp32pm.toml.</div>
+      <div class="fc-rule">✗ git-ignored  ✗ never edit  ✓ auto-regenerated</div>
+    </div>
+    <div class="file-card" style="border-color:var(--purple)">
+      <div class="fc-name" style="color:var(--purple)">.esp32pm/cmake/CMakeLists.txt</div>
+      <div class="fc-badge fcb-gen">AUTO-GENERATED</div>
+      <div class="fc-body">The root CMakeLists.txt for your project. Sets project name, C/C++ standards, includes the toolchain file, adds your src/ files, includes esp32pm_deps.cmake. If you need custom CMake — add a CMakeExtras.cmake file in your root and esp32pm will include it.</div>
+      <div class="fc-rule">✗ git-ignored  ✗ never edit  ✓ auto-regenerated</div>
+    </div>
+    <div class="file-card" style="border-color:var(--purple)">
+      <div class="fc-name" style="color:var(--purple)">.esp32pm/install_state.json</div>
+      <div class="fc-badge fcb-gen">AUTO-GENERATED</div>
+      <div class="fc-body">Internal state file. Tracks which packages are installed, their exact paths, SHA256 hashes, and timestamps. Used by esp32pm to detect if packages were corrupted or manually modified. Do not touch.</div>
+      <div class="fc-rule">✗ git-ignored  ✗ never edit</div>
+    </div>
+    <div class="file-card" style="border-color:var(--purple)">
+      <div class="fc-name" style="color:var(--purple)">.esp32pm/memory_snapshot.json</div>
+      <div class="fc-badge fcb-gen">AUTO-GENERATED</div>
+      <div class="fc-body">Stores measured Flash + RAM contribution of each installed package. Used by <span style="font-family:var(--mono);font-size:11px">esp32pm check memory</span> and the VS Code memory bar. Updated after every build by parsing the .map file output.</div>
+      <div class="fc-rule">✗ git-ignored  ✗ never edit</div>
+    </div>
+    <div class="file-card" style="border-color:var(--red)">
+      <div class="fc-name" style="color:var(--red)">build/firmware.bin</div>
+      <div class="fc-badge fcb-never">COMPILED OUTPUT — GIT-IGNORED</div>
+      <div class="fc-body">The actual flashable firmware binary. Produced by CMake + GCC after successful build. Flash to ESP32 with <span style="font-family:var(--mono);font-size:11px">esp32pm flash</span> (wraps esptool). Never commit — always reproducible from source.</div>
+      <div class="fc-rule">✗ git-ignored  ✗ never commit</div>
+    </div>
+  </div>
+
+  <h2>Inside each downloaded library folder</h2>
+  <div class="tree-wrap">
+    <div class="tree-header"><div class="tree-title"><div class="tree-dot td-red"></div><div class="tree-dot td-amber"></div><div class="tree-dot td-green"></div>&nbsp;.esp32pm/packages/bme280_idf@2.4.1/</div></div>
+    <div class="tree-body">
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-json tree-name">esp32pm.json</span><span class="tree-comment">package metadata — used by resolver, never changes post-download</span></div>
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-cmake tree-name">CMakeLists.txt</span><span class="tree-comment">tells CMake how to build THIS library as a static lib target</span></div>
+      <div class="tree-row"><span class="tree-icon">📁</span><span class="tn-dir tree-name">src/</span><span class="tree-comment">all .c and .cpp source files of the library</span></div>
+      <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-c">bme280.c</span><span class="tree-comment">compiled into libbme280_idf.a static library</span></div>
+      <div class="tree-row"><span class="tree-icon">📁</span><span class="tn-dir tree-name">include/</span><span class="tree-comment">public headers — added to include path so your #include works</span></div>
+      <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-h">bme280.h</span></div>
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-txt tree-name">LICENSE</span><span class="tree-comment">MIT / Apache2 / GPL — license check runs at publish time</span></div>
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-txt tree-name">README.md</span><span class="tree-comment">served on website — NOT on your disk (optional download)</span></div>
+      <div class="tree-row"><span class="tree-icon">📁</span><span class="tn-dir tree-name">examples/</span><span class="tree-comment">only if --with-examples flag used</span></div>
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-txt tree-name">CHANGELOG.md</span><span class="tree-comment">version history — shown on website</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!--  PANEL 4 — GLOBAL CACHE                           -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="panel" id="p4">
+<div class="wrap">
+  <div class="page-title">Global Cache — ~/.esp32pm/</div>
+  <div class="page-sub">Shared across ALL your projects on one machine. Download once, use everywhere.</div>
+
+  <div class="tree-wrap">
+    <div class="tree-header"><div class="tree-title"><div class="tree-dot td-red"></div><div class="tree-dot td-amber"></div><div class="tree-dot td-green"></div>&nbsp;~/.esp32pm/  (your home directory — shared globally)</div></div>
+    <div class="tree-body">
+      <!-- packages cache -->
+      <div class="tree-row"><span class="collapsible" onclick="toggleTree('gc-pkgs')"><span class="tree-icon">📁</span><span class="tn-dir">packages/</span></span><span class="tree-comment">every package ever downloaded on this machine</span></div>
+      <div class="subtree open" id="gc-pkgs">
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📁</span><span class="tn-dir">bme280_idf/</span></div>
+        <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📁</span><span class="tn-dir">2.4.1/</span><span class="tree-comment">full extracted source</span></div>
+        <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📁</span><span class="tn-dir">2.3.0/</span><span class="tree-comment">older version still cached</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📁</span><span class="tn-dir">FastLED_ESP32/</span></div>
+        <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📁</span><span class="tn-dir">3.7.2/</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📁</span><span class="tn-dir">ArduinoJSON/</span></div>
+        <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📁</span><span class="tn-dir">7.0.4/</span></div>
+        <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📁</span><span class="tn-dir">6.21.2/</span><span class="tree-comment">older project still uses v6</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📁</span><span class="tn-dir">... 47 more packages ...</span></div>
+      </div>
+
+      <!-- toolchains cache -->
+      <div class="tree-row"><span class="collapsible" onclick="toggleTree('gc-tc')"><span class="tree-icon">📁</span><span class="tn-dir">toolchains/</span></span><span class="tree-comment">compilers — heaviest, never duplicated</span></div>
+      <div class="subtree open" id="gc-tc">
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📁</span><span class="tn-dir">xtensa-esp32s3-gcc@12.2.0/</span><span class="tree-comment">~400MB — used by 3 projects</span></div>
+        <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📁</span><span class="tn-dir">bin/</span><span class="tree-comment">xtensa-esp32s3-elf-gcc, g++, ld, objcopy...</span></div>
+        <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📁</span><span class="tn-dir">lib/</span></div>
+        <div class="tree-row"><span class="tree-indent">│   │   </span><span class="tree-icon">📁</span><span class="tn-dir">include/</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📁</span><span class="tn-dir">xtensa-esp32-gcc@11.2.0/</span><span class="tree-comment">older chip, older project</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📁</span><span class="tn-dir">riscv32-esp32c3-gcc@12.2.0/</span><span class="tree-comment">for C3/C6 projects</span></div>
+      </div>
+
+      <!-- registry cache -->
+      <div class="tree-row"><span class="collapsible" onclick="toggleTree('gc-reg')"><span class="tree-icon">📁</span><span class="tn-dir">registry-cache/</span></span><span class="tree-comment">local mirror of registry metadata (TTL: 1 hour)</span></div>
+      <div class="subtree closed" id="gc-reg">
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📄</span><span class="tn-json">index.json</span><span class="tree-comment">list of all packages + latest versions</span></div>
+        <div class="tree-row"><span class="tree-indent">│   </span><span class="tree-icon">📁</span><span class="tn-dir">metadata/</span><span class="tree-comment">esp32pm.json for each package version</span></div>
+      </div>
+
+      <!-- config -->
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-toml tree-name">config.toml</span><span class="tree-comment">global settings: registry URL, token, proxy, cache size limit</span></div>
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-json tree-name">credentials.json</span><span class="tree-comment">API token for publishing (chmod 600, never committed)</span></div>
+      <div class="tree-row"><span class="tree-icon">📄</span><span class="tn-json tree-name">cache_manifest.json</span><span class="tree-comment">tracks size of cache, GC marks stale entries</span></div>
+    </div>
+  </div>
+
+  <h2>Why a global cache matters</h2>
+  <table class="gc-table">
+    <tr><th>Scenario</th><th>Without global cache</th><th>With global cache</th></tr>
+    <tr><td>Project 1 installs ArduinoJSON@7.0.4</td><td>Download 180KB tarball</td><td>Download 180KB tarball → cached</td></tr>
+    <tr><td>Project 2 also needs ArduinoJSON@7.0.4</td><td>Download again</td><td style="color:var(--green)">Instant — already in cache</td></tr>
+    <tr><td>Clone project on same machine, run install</td><td>Download all packages again</td><td style="color:var(--green)">Instant — all in cache</td></tr>
+    <tr><td>Toolchain download (400MB)</td><td>400MB per project (!)</td><td style="color:var(--green)">400MB once, symlinked forever</td></tr>
+    <tr><td>CI/CD pipeline cold start</td><td>Download everything (slow)</td><td style="color:var(--green)">Restore cache dir → instant</td></tr>
+    <tr><td>Offline development</td><td>Fails — no internet</td><td style="color:var(--green)">Works — reads from cache</td></tr>
+  </table>
+
+  <div class="warn"><strong>Cache size management:</strong> <span style="font-family:var(--mono);font-size:11px">esp32pm cache clean --older-than 90d</span> removes packages not used in 90 days. <span style="font-family:var(--mono);font-size:11px">esp32pm cache info</span> shows total disk usage. Typical cache after 6 months of work: 2–8GB (mostly toolchains).</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!--  PANEL 5 — LIFECYCLE                              -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="panel" id="p5">
+<div class="wrap">
+  <div class="page-title">Full Project Lifecycle</div>
+  <div class="page-sub">From zero to flashed firmware — every command, every file created</div>
+
+  <div class="life-steps">
+
+    <div class="life-step">
+      <div class="life-left">
+        <div class="life-num" style="background:var(--green-dim);color:var(--green);border:2px solid var(--green)">01</div>
+        <div class="life-line"></div>
+      </div>
+      <div class="life-right">
+        <div class="life-title">esp32pm init</div>
+        <div class="life-sub">Creates the project scaffold. Asks you: board name, framework, project name. Generates your starting config.</div>
+        <div class="life-files">
+          <div class="life-file lf-create">esp32pm.toml ← CREATED</div>
+          <div class="life-file lf-create">src/main.cpp ← CREATED (template)</div>
+          <div class="life-file lf-create">include/ ← CREATED</div>
+          <div class="life-file lf-create">.gitignore ← CREATED</div>
+          <div class="life-file lf-create">README.md ← CREATED</div>
+        </div>
+        <div class="cmd-box">$ esp32pm init<br><em style="color:var(--text3)">  Board: esp32-devkitc-v4</em><br><em style="color:var(--text3)">  Framework: arduino</em><br><em style="color:var(--text3)">  ✓ Project created</em></div>
+      </div>
+    </div>
+
+    <div class="life-step">
+      <div class="life-left">
+        <div class="life-num" style="background:var(--blue-dim);color:var(--blue);border:2px solid var(--blue)">02</div>
+        <div class="life-line"></div>
+      </div>
+      <div class="life-right">
+        <div class="life-title">esp32pm add bme280_idf</div>
+        <div class="life-sub">Adds a dependency to your toml. Does NOT download yet — just records the intent. Resolves the latest compatible version and writes it to toml.</div>
+        <div class="life-files">
+          <div class="life-file lf-modify">esp32pm.toml ← MODIFIED (dep added)</div>
+        </div>
+        <div class="cmd-box">$ esp32pm add bme280_idf<br><em style="color:var(--text3)">  Resolving latest: bme280_idf@2.4.1</em><br><em style="color:var(--text3)">  Added to esp32pm.toml</em><br><em style="color:var(--text3)">  Run: esp32pm install</em></div>
+      </div>
+    </div>
+
+    <div class="life-step">
+      <div class="life-left">
+        <div class="life-num" style="background:var(--amber-dim);color:var(--amber);border:2px solid var(--amber)">03</div>
+        <div class="life-line"></div>
+      </div>
+      <div class="life-right">
+        <div class="life-title">esp32pm install</div>
+        <div class="life-sub">The big one. Resolves full dependency graph, checks memory budget, downloads missing packages to global cache, extracts to .esp32pm/packages/, generates all CMake files, generates lock file.</div>
+        <div class="life-files">
+          <div class="life-file lf-create">esp32pm.lock ← GENERATED</div>
+          <div class="life-file lf-create">.esp32pm/packages/* ← EXTRACTED</div>
+          <div class="life-file lf-create">.esp32pm/cmake/* ← GENERATED</div>
+          <div class="life-file lf-download">~/.esp32pm/packages/* ← DOWNLOADED</div>
+          <div class="life-file lf-download">~/.esp32pm/toolchains/* ← DOWNLOADED</div>
+        </div>
+        <div class="cmd-box">$ esp32pm install<br><em style="color:var(--text3)">  Resolving dependency graph...</em><br><em style="color:var(--text3)">  → bme280_idf@2.4.1</em><br><em style="color:var(--text3)">  → ArduinoJSON@7.0.4 (transitive)</em><br><em style="color:var(--text3)">  Checking memory budget...</em><br><em style="color:var(--text3)">  Flash: 48 KB / 4096 KB ✓</em><br><em style="color:var(--text3)">  RAM:   12 KB / 520 KB  ✓</em><br><em style="color:var(--text3)">  Downloading toolchain (cache miss)...</em><br><em style="color:var(--text3)">  ████████████████ 400MB done</em><br><em style="color:var(--text3)">  Generating CMake files...</em><br><em style="color:var(--text3)">  ✓ 3 packages installed</em></div>
+      </div>
+    </div>
+
+    <div class="life-step">
+      <div class="life-left">
+        <div class="life-num" style="background:var(--green-dim);color:var(--green);border:2px solid var(--green)">04</div>
+        <div class="life-line"></div>
+      </div>
+      <div class="life-right">
+        <div class="life-title">Write your code</div>
+        <div class="life-sub">You write src/main.cpp. Include library headers cleanly. No path hacks needed — CMake knows where everything is.</div>
+        <div class="life-files">
+          <div class="life-file lf-modify">src/main.cpp ← YOU WRITE</div>
+        </div>
+        <div class="cmd-box"><em style="color:var(--text3)">// In your main.cpp:</em><br>#include "bme280.h"    <em style="color:var(--text3)">// ← just works</em><br>#include &lt;ArduinoJSON.h&gt; <em style="color:var(--text3)">// ← just works</em></div>
+      </div>
+    </div>
+
+    <div class="life-step">
+      <div class="life-left">
+        <div class="life-num" style="background:var(--purple-dim);color:var(--purple);border:2px solid var(--purple)">05</div>
+        <div class="life-line"></div>
+      </div>
+      <div class="life-right">
+        <div class="life-title">esp32pm build</div>
+        <div class="life-sub">Invokes CMake + Ninja under the hood. Compiles all library sources + your code. Links everything. Produces firmware.bin + memory report.</div>
+        <div class="life-files">
+          <div class="life-file lf-create">build/firmware.bin ← COMPILED</div>
+          <div class="life-file lf-create">build/firmware.elf ← COMPILED</div>
+          <div class="life-file lf-create">build/firmware.map ← COMPILED</div>
+          <div class="life-file lf-create">build/memory_report.txt ← GENERATED</div>
+          <div class="life-file lf-modify">.esp32pm/memory_snapshot.json ← UPDATED</div>
+        </div>
+        <div class="cmd-box">$ esp32pm build<br><em style="color:var(--text3)">  [1/24] Compiling bme280.c</em><br><em style="color:var(--text3)">  [2/24] Compiling main.cpp</em><br><em style="color:var(--text3)">  ...</em><br><em style="color:var(--text3)">  [24/24] Linking firmware.elf</em><br><em style="color:var(--text3)">  ✓ Build successful</em><br><em style="color:var(--text3)">  Flash: 124 KB / 4096 KB (3%)</em><br><em style="color:var(--text3)">  RAM:   18 KB / 520 KB (3%)</em></div>
+      </div>
+    </div>
+
+    <div class="life-step">
+      <div class="life-left">
+        <div class="life-num" style="background:var(--green-dim);color:var(--green);border:2px solid var(--green)">06</div>
+        <div class="life-line"></div>
+      </div>
+      <div class="life-right">
+        <div class="life-title">esp32pm flash</div>
+        <div class="life-sub">Wraps esptool.py. Detects your ESP32's COM/USB port automatically. Flashes firmware.bin. Opens serial monitor automatically after flash.</div>
+        <div class="life-files">
+          <div class="life-file lf-read">build/firmware.bin ← READ AND SENT TO CHIP</div>
+        </div>
+        <div class="cmd-box">$ esp32pm flash<br><em style="color:var(--text3)">  Detecting port... found /dev/ttyUSB0</em><br><em style="color:var(--text3)">  Flashing firmware.bin (124 KB)...</em><br><em style="color:var(--text3)">  ████████████████ done</em><br><em style="color:var(--text3)">  ✓ Flashed. Opening monitor...</em></div>
+      </div>
+    </div>
+
+    <div class="life-step">
+      <div class="life-left">
+        <div class="life-num" style="background:var(--blue-dim);color:var(--blue);border:2px solid var(--blue)">07</div>
+      </div>
+      <div class="life-right">
+        <div class="life-title">Teammate clones your repo</div>
+        <div class="life-sub">They get esp32pm.toml + esp32pm.lock. They run one command. They get EXACTLY the same environment — same package versions, same toolchain version. Zero setup friction.</div>
+        <div class="life-files">
+          <div class="life-file lf-read">esp32pm.lock ← READ (exact versions used)</div>
+          <div class="life-file lf-download">~/.esp32pm/* ← DOWNLOADED to their machine</div>
+          <div class="life-file lf-create">.esp32pm/* ← GENERATED for their project</div>
+        </div>
+        <div class="cmd-box">$ git clone ... && cd my_weather_station<br>$ esp32pm install<br><em style="color:var(--text3)">  Reading esp32pm.lock...</em><br><em style="color:var(--text3)">  Installing exact locked versions...</em><br><em style="color:var(--text3)">  ✓ Ready. Same as your teammate.</em></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!--  PANEL 6 — GIT RULES                              -->
+<!-- ══════════════════════════════════════════════════ -->
+<div class="panel" id="p6">
+<div class="wrap">
+  <div class="page-title">Git Rules — What to Commit</div>
+  <div class="page-sub">The exact .gitignore and the reasoning behind every decision</div>
+
+  <h2>The rule — simple version</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
+    <div style="background:var(--green-dim);border:1px solid var(--green);border-radius:10px;padding:16px">
+      <div style="color:var(--green);font-weight:700;font-size:14px;margin-bottom:12px">✓ ALWAYS COMMIT</div>
+      <div style="font-family:var(--mono);font-size:12px;line-height:2.2;color:var(--text2)">
+        esp32pm.toml<br>
+        esp32pm.lock<br>
+        src/**<br>
+        include/**<br>
+        .gitignore<br>
+        README.md<br>
+        CMakeExtras.cmake <em style="color:var(--text3)">(if you have it)</em>
+      </div>
+    </div>
+    <div style="background:var(--red-dim);border:1px solid var(--red);border-radius:10px;padding:16px">
+      <div style="color:var(--red);font-weight:700;font-size:14px;margin-bottom:12px">✗ NEVER COMMIT</div>
+      <div style="font-family:var(--mono);font-size:12px;line-height:2.2;color:var(--text2)">
+        .esp32pm/<br>
+        build/<br>
+        *.bin *.elf *.map<br>
+        ~/.esp32pm/ <em style="color:var(--text3)">(global cache)</em><br>
+        .env <em style="color:var(--text3)">(WiFi creds etc)</em><br>
+        sdkconfig <em style="color:var(--text3)">(IDF projects)</em>
+      </div>
+    </div>
+  </div>
+
+  <h2>Generated .gitignore</h2>
+  <div class="gitignore-box">
+<span class="gi-comment"># esp32pm — generated by: esp32pm init</span>
+<span class="gi-comment"># DO NOT commit the managed package folder</span>
+<span class="gi-path">.esp32pm/</span>
+
+<span class="gi-comment"># DO NOT commit compiled output</span>
+<span class="gi-path">build/</span>
+<span class="gi-path">*.bin</span>
+<span class="gi-path">*.elf</span>
+<span class="gi-path">*.map</span>
+<span class="gi-path">*.hex</span>
+
+<span class="gi-comment"># DO NOT commit secrets</span>
+<span class="gi-path">.env</span>
+<span class="gi-path">secrets.h</span>
+
+<span class="gi-comment"># ESP-IDF specifics (if using IDF framework)</span>
+<span class="gi-path">sdkconfig</span>
+<span class="gi-path">sdkconfig.old</span>
+<span class="gi-path">dependencies.lock</span>
+
+<span class="gi-comment"># IDE files (optional — team preference)</span>
+<span class="gi-path">.vscode/</span>
+<span class="gi-path">.idea/</span>
+
+<span class="gi-comment"># macOS</span>
+<span class="gi-path">.DS_Store</span>
+  </div>
+
+  <h2>Why commit esp32pm.lock?</h2>
+  <div class="tip"><strong>Yes — always commit the lock file.</strong> The lock file records the EXACT resolved version of every package (including transitive deps). Without it, running <span style="font-family:var(--mono);font-size:11px">esp32pm install</span> one week later might give you a slightly different version of a transitive dependency — and your firmware breaks in a mysterious way. Committing the lock file means every developer and every CI run gets exactly the same dependency tree, forever. This is how npm, Cargo, and pub.dev all work.</div>
+
+  <h2>Why NOT commit .esp32pm/?</h2>
+  <div class="tip"><strong>.esp32pm/ is fully reproducible</strong> from esp32pm.toml + esp32pm.lock. It's like committing your node_modules/ — wasteful, causes merge conflicts, and breaks cross-platform compatibility (a .so compiled on Linux won't work on macOS). Run <span style="font-family:var(--mono);font-size:11px">esp32pm install</span> and it's regenerated in seconds from the global cache.</div>
+
+  <div class="warn"><strong>Special case — vendoring for offline/safety:</strong> If your company requires fully offline builds or has strict supply chain requirements, use <span style="font-family:var(--mono);font-size:11px">esp32pm vendor</span> which copies all packages into a <span style="font-family:var(--mono)">vendor/</span> folder that IS committed to git. This is the embedded industry's equivalent of "vendoring" in Go.</div>
+</div>
+</div>
+
+<script>
+function show(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+  document.querySelectorAll('.ntab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+}
+function toggleTree(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+  el.classList.toggle('closed');
+}
+</script>
+</body>
+</html>

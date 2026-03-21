@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32PM — Where to Start</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Syne:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --border:#30363d;--border2:#484f58;
+  --green:#3fb950;--green2:#238636;--green-dim:rgba(63,185,80,0.12);
+  --blue:#58a6ff;--blue-dim:rgba(88,166,255,0.1);
+  --amber:#e3b341;--amber-dim:rgba(227,179,65,0.1);
+  --red:#f85149;--red-dim:rgba(248,81,73,0.1);
+  --purple:#bc8cff;--purple-dim:rgba(188,140,255,0.1);
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --mono:'IBM Plex Mono',monospace;
+  --display:'Syne',sans-serif;
+  --body:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.6}
+
+.topnav{display:flex;align-items:center;gap:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:100;overflow-x:auto}
+.logo{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--green);padding:13px 18px 13px 0;border-right:1px solid var(--border);margin-right:10px;flex-shrink:0}
+.logo em{color:var(--text2);font-style:normal}
+.ntab{padding:13px 14px;font-size:12px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s}
+.ntab:hover{color:var(--text)}
+.ntab.on{color:var(--green);border-bottom-color:var(--green)}
+.panel{display:none}.panel.show{display:block}
+
+.wrap{max-width:960px;margin:0 auto;padding:36px 20px}
+.page-title{font-family:var(--display);font-size:28px;font-weight:800;color:var(--text);margin-bottom:4px;line-height:1.2}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:32px;line-height:1.6}
+
+h2{font-family:var(--display);font-size:18px;font-weight:700;color:var(--text);margin:28px 0 14px;display:flex;align-items:center;gap:10px}
+h2::after{content:'';flex:1;height:1px;background:var(--border)}
+h3{font-size:14px;font-weight:600;color:var(--text);margin:16px 0 8px}
+
+/* TECH STACK CARDS */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:20px}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative}
+.sc-layer{font-size:9px;font-weight:700;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:10px;font-family:var(--mono)}
+.sl-1{background:var(--red-dim);color:var(--red)}
+.sl-2{background:var(--amber-dim);color:var(--amber)}
+.sl-3{background:var(--green-dim);color:var(--green)}
+.sl-4{background:var(--blue-dim);color:var(--blue)}
+.sl-5{background:var(--purple-dim);color:var(--purple)}
+.sc-name{font-family:var(--display);font-size:16px;font-weight:700;color:var(--text);margin-bottom:2px}
+.sc-tech{font-family:var(--mono);font-size:11px;color:var(--green);margin-bottom:8px}
+.sc-why{font-size:12px;color:var(--text2);line-height:1.65}
+.sc-alt{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:8px;padding:4px 8px;background:var(--bg3);border-radius:4px}
+.sc-decision{position:absolute;top:12px;right:12px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px}
+.sd-must{background:var(--red-dim);color:var(--red)}
+.sd-rec{background:var(--green-dim);color:var(--green)}
+.sd-flex{background:var(--amber-dim);color:var(--amber)}
+
+/* ROADMAP */
+.phase-wrap{margin-bottom:12px}
+.phase{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.phase-head{display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer}
+.phase-head:hover{background:var(--bg3)}
+.ph-num{font-family:var(--mono);font-size:22px;font-weight:700;min-width:44px;flex-shrink:0}
+.p1-num{color:var(--green)}.p2-num{color:var(--blue)}.p3-num{color:var(--amber)}.p4-num{color:var(--purple)}
+.ph-info{flex:1}
+.ph-title{font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.ph-time{font-size:11px;font-family:var(--mono)}
+.p1-time{color:var(--green)}.p2-time{color:var(--blue)}.p3-time{color:var(--amber)}.p4-time{color:var(--purple)}
+.ph-arr{color:var(--text3);font-size:12px;flex-shrink:0}
+.phase-body{padding:0 18px 18px;display:none;border-top:1px solid var(--border)}
+.phase-body.open{display:block}
+.task-list{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.task{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.task-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px}
+.task-detail{font-size:11px;color:var(--text2);line-height:1.5}
+.task-file{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:5px;padding:3px 6px;background:var(--bg);border-radius:3px;display:inline-block}
+.phase-why{margin-top:14px;background:var(--green-dim);border-left:2px solid var(--green);border-radius:0 6px 6px 0;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6}
+.phase-why strong{color:var(--green)}
+
+/* REPO STRUCTURE */
+.repo-tree{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.repo-header{padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px}
+.rh-dot{width:10px;height:10px;border-radius:50%}
+.repo-body{padding:16px 18px;font-family:var(--mono);font-size:12px;line-height:2.1}
+.rr{display:flex;white-space:nowrap}
+.ri{color:var(--text3)}
+.rd{color:var(--blue);font-weight:500}
+.rf{color:var(--text2)}
+.rc{color:var(--text3);font-style:italic;margin-left:10px;font-size:11px}
+.rt{font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle}
+.rt-cli{background:var(--red-dim);color:var(--red)}
+.rt-web{background:var(--blue-dim);color:var(--blue)}
+.rt-api{background:var(--green-dim);color:var(--green)}
+.rt-shared{background:var(--amber-dim);color:var(--amber)}
+
+/* AI PROMPT */
+.prompt-box{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.pb-header{padding:12px 18px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.pb-title{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.pb-copy{font-size:11px;color:var(--green);cursor:pointer;font-family:var(--mono);border:1px solid var(--green);padding:3px 10px;border-radius:4px;background:transparent}
+.pb-copy:hover{background:var(--green-dim)}
+.pb-body{padding:20px 22px;font-family:var(--mono);font-size:12px;line-height:1.9;color:var(--text);white-space:pre-wrap;word-wrap:break-word;max-height:500px;overflow-y:auto}
+.pk{color:var(--blue)}.pv{color:var(--amber)}.pc{color:var(--text3);font-style:italic}.ps{color:var(--green)}.ph{color:var(--purple);font-weight:600}.pn{color:var(--text)}
+
+/* DECISION TABLE */
+table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0 20px}
+th{padding:9px 12px;background:var(--bg3);font-weight:500;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:11px}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2)}
+td:first-child{color:var(--text);font-weight:500;font-family:var(--mono);font-size:11px}
+tr:last-child td{border-bottom:none}
+.pick{color:var(--green);font-weight:600}
+.skip{color:var(--red)}
+.maybe{color:var(--amber)}
+
+/* TIPS */
+.tip{background:var(--blue-dim);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:var(--text2);margin:12px 0;line-height:1.7}
+.tip strong{color:var(--text)}
+.warn{background:var(--amber-dim);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:var(--text2);margin:12px 0}
+.warn strong{color:var(--amber)}
+.success{background:var(--green-dim);border-left:3px solid var(--green);border-radius:0 8px 8px 0;padding:12px 14px;font-size:13px;color:var(--text2);margin:12px 0;line-height:1.75}
+.success strong{color:var(--green);font-size:14px}
+
+/* CMD */
+.cmd{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:var(--mono);font-size:12px;margin:10px 0}
+.cmd-line{color:var(--green);line-height:2}
+.cmd-comment{color:var(--text3);font-style:italic}
+
+/* BADGE */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;font-family:var(--mono);margin-left:6px}
+.bg-rust{background:rgba(255,100,40,0.15);color:#ff6428}
+.bg-ts{background:rgba(49,120,198,0.2);color:#3178c6}
+.bg-py{background:rgba(255,212,59,0.15);color:#ffd43b}
+.bg-pg{background:rgba(50,103,145,0.2);color:#336791}
+.bg-next{background:rgba(255,255,255,0.1);color:#fff}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="logo">esp32<em>pm</em></div>
+  <div class="ntab on"  onclick="show('p1',this)">Where to Start</div>
+  <div class="ntab" onclick="show('p2',this)">Tech Stack</div>
+  <div class="ntab" onclick="show('p3',this)">Repo Structure</div>
+  <div class="ntab" onclick="show('p4',this)">Build Roadmap</div>
+  <div class="ntab" onclick="show('p5',this)">AI Agent Prompt</div>
+</div>
+
+<!-- ══════════ P1: WHERE TO START ══════════ -->
+<div class="panel show" id="p1">
+<div class="wrap">
+  <div class="page-title">Where to Start</div>
+  <div class="page-sub">You've done the thinking. Now here's the exact first move — no wasted effort.</div>
+
+  <h2>The single most important decision first</h2>
+
+  <div class="success">
+    <strong>Start with the Registry Website + Auto-indexer. NOT the CLI.</strong><br><br>
+    Here's why: the website gives you something to SHOW people immediately. You can share a URL, get feedback, build an audience, and prove the concept — all before writing a single line of CLI code. The CLI without a registry is useless. The registry without a CLI is still useful (people can browse and discover libraries). Build the thing that proves value first.
+  </div>
+
+  <h2>Your first 4 weeks — exact tasks in order</h2>
+
+  <table>
+    <tr><th>Week</th><th>Task</th><th>Output</th><th>Why this order</th></tr>
+    <tr>
+      <td>Week 1</td>
+      <td>Database schema + GitHub crawler</td>
+      <td>PostgreSQL DB with 500+ ESP32 libs auto-imported from GitHub</td>
+      <td>Data first — without packages, the website has nothing to show</td>
+    </tr>
+    <tr>
+      <td>Week 2</td>
+      <td>Registry API (backend)</td>
+      <td>REST API: GET /packages, GET /packages/:name, GET /search</td>
+      <td>API before UI — decouples frontend from backend work</td>
+    </tr>
+    <tr>
+      <td>Week 3</td>
+      <td>Registry website (frontend)</td>
+      <td>Working website: search, package list, package detail page</td>
+      <td>Now you have something people can actually use and share</td>
+    </tr>
+    <tr>
+      <td>Week 4</td>
+      <td>Quality scoring system</td>
+      <td>Every package gets a 0–100 score based on GitHub signals</td>
+      <td>This is your first killer feature — immediate differentiation</td>
+    </tr>
+  </table>
+
+  <div class="warn"><strong>Do NOT start with the CLI.</strong> The CLI needs the registry to be useful. The website needs the database. The database needs the crawler. Start at the bottom of the stack and work up.</div>
+
+  <h2>Day 1 — literally what to type</h2>
+  <div class="cmd">
+    <div class="cmd-comment"># 1. Create your monorepo</div>
+    <div class="cmd-line">mkdir esp32pm && cd esp32pm && git init</div>
+    <div class="cmd-line">mkdir -p apps/web apps/api apps/cli packages/core packages/types</div>
+    <div class="cmd-line">touch README.md pnpm-workspace.yaml turbo.json</div>
+    <br>
+    <div class="cmd-comment"># 2. Init the API (Hono on Bun — fast, simple)</div>
+    <div class="cmd-line">cd apps/api && bun init</div>
+    <div class="cmd-line">bun add hono @hono/node-server drizzle-orm postgres</div>
+    <br>
+    <div class="cmd-comment"># 3. Init the web (Next.js)</div>
+    <div class="cmd-line">cd ../web && npx create-next-app@latest . --typescript --tailwind --app</div>
+    <br>
+    <div class="cmd-comment"># 4. Start your database</div>
+    <div class="cmd-line">docker run -d --name esp32pm-db -e POSTGRES_PASSWORD=dev -p 5432:5432 postgres:16</div>
+    <br>
+    <div class="cmd-comment"># 5. Write the first migration — packages table</div>
+    <div class="cmd-line">cd ../api && touch src/db/schema.ts src/crawler/github.ts</div>
+  </div>
+
+  <h2>First real milestone to aim for</h2>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--green)">500+</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px">ESP32 libs auto-indexed from GitHub</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--blue)">1 URL</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px">You can share with any ESP32 developer and it's useful</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--amber)">4 weeks</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px">From zero to live, working, shareable website</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ P2: TECH STACK ══════════ -->
+<div class="panel" id="p2">
+<div class="wrap">
+  <div class="page-title">Tech Stack — Every Decision Explained</div>
+  <div class="page-sub">Chosen for speed of building, not theoretical perfection. You can ship faster with this stack than anything else.</div>
+
+  <h2>CLI Tool</h2>
+  <div class="stack-grid">
+    <div class="sc">
+      <div class="sc-decision sd-must">MUST USE</div>
+      <div class="sc-layer sl-1">CLI LANGUAGE</div>
+      <div class="sc-name">Rust</div>
+      <div class="sc-tech">cargo, clap, tokio, reqwest, serde</div>
+      <div class="sc-why">Fast cold start (critical for CLI — nobody wants to wait 2s for a command). Single binary, no runtime to install. Cross-compiles to Windows/macOS/Linux from one codebase. The embedded community already respects Rust deeply — using it signals credibility. Cargo itself is proof Rust makes world-class package managers.</div>
+      <div class="sc-alt">Alt considered: Go (fast but weaker ecosystem), Python (slow startup, needs runtime)</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-must">MUST USE</div>
+      <div class="sc-layer sl-1">DEPENDENCY RESOLVER</div>
+      <div class="sc-name">PubGrub Algorithm</div>
+      <div class="sc-tech">pubgrub crate (Rust)</div>
+      <div class="sc-why">The gold standard dependency resolution algorithm — same one used by pip and Cargo. Guarantees finding the optimal solution OR gives a clear human-readable explanation of why no solution exists. DO NOT write your own resolver. This crate exists, it's tested, use it.</div>
+      <div class="sc-alt">Never write your own — it's a PhD-level CS problem</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-1">BUILD SYSTEM</div>
+      <div class="sc-name">CMake + Ninja</div>
+      <div class="sc-tech">cmake 3.25+, ninja-build</div>
+      <div class="sc-why">CMake is the only cross-platform build system with proper ARM/Xtensa toolchain file support. Your CLI generates CMakeLists.txt from esp32pm.toml — users never write CMake. Ninja makes it fast. This is what ESP-IDF and Zephyr both use internally.</div>
+      <div class="sc-alt">Not Make (too old), not Bazel (too complex for embedded beginners)</div>
+    </div>
+  </div>
+
+  <h2>Registry Backend (API)</h2>
+  <div class="stack-grid">
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-2">API FRAMEWORK</div>
+      <div class="sc-name">Hono <span class="badge bg-ts">TypeScript</span></div>
+      <div class="sc-tech">hono, bun runtime, zod validation</div>
+      <div class="sc-why">Extremely fast, lightweight, TypeScript-native. Runs on Bun (fastest JS runtime). Edge-deployable later if needed. Type-safe from day one. Much simpler than NestJS for an API of this size. You'll write 3x less boilerplate than Express.</div>
+      <div class="sc-alt">Alt: Fastify (good), Express (too old), NestJS (overkill for v1)</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-must">MUST USE</div>
+      <div class="sc-layer sl-2">DATABASE</div>
+      <div class="sc-name">PostgreSQL 16 <span class="badge bg-pg">SQL</span></div>
+      <div class="sc-tech">drizzle-orm, postgres.js</div>
+      <div class="sc-why">Full-text search built in (pg_tsvector) — no need for Elasticsearch at first. JSONB columns for flexible package metadata. Reliable, battle-tested, free. Drizzle ORM gives you type-safe queries with zero magic. Same stack npm and crates.io use.</div>
+      <div class="sc-alt">NOT MongoDB — structured package data belongs in SQL</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-2">FILE STORAGE</div>
+      <div class="sc-name">Cloudflare R2</div>
+      <div class="sc-tech">S3-compatible API, free egress</div>
+      <div class="sc-why">Store package tarballs (.tar.gz files). S3-compatible so your code is portable. Cloudflare R2 has ZERO egress fees — critical since packages get downloaded millions of times. Cheaper than AWS S3 for a package registry with high download volume.</div>
+      <div class="sc-alt">Alt: AWS S3 (egress costs will hurt), Backblaze B2 (also good)</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-2">CACHE LAYER</div>
+      <div class="sc-name">Redis (Upstash)</div>
+      <div class="sc-tech">ioredis, rate limiting, session</div>
+      <div class="sc-why">Cache hot package metadata — /packages/bme280 gets called thousands of times per day. Rate limit the API per IP. Store publish tokens temporarily. Upstash is serverless Redis — no server to manage, pay per request.</div>
+      <div class="sc-alt">Can skip in v1 — add when you hit performance issues</div>
+    </div>
+  </div>
+
+  <h2>Registry Website (Frontend)</h2>
+  <div class="stack-grid">
+    <div class="sc">
+      <div class="sc-decision sd-must">MUST USE</div>
+      <div class="sc-layer sl-3">WEB FRAMEWORK</div>
+      <div class="sc-name">Next.js 15 <span class="badge bg-next">React</span></div>
+      <div class="sc-tech">App Router, Server Components, TypeScript</div>
+      <div class="sc-why">Server-side rendering for SEO — package pages need to be crawlable by Google. Static generation for docs pages. App Router gives you streaming and React Server Components. Vercel deploys it for free. Most importantly — you probably already know React.</div>
+      <div class="sc-alt">Alt: SvelteKit (great but smaller ecosystem), Remix (also good)</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-3">STYLING</div>
+      <div class="sc-name">Tailwind CSS + shadcn/ui</div>
+      <div class="sc-tech">tailwindcss, shadcn/ui, lucide-react</div>
+      <div class="sc-why">Tailwind for custom styling speed. shadcn/ui gives you production-quality components (search, tables, dialogs, tabs) that you own and can customize — not a locked-in component library. You saw the dark terminal aesthetic in the mockup — Tailwind + custom CSS variables makes this easy.</div>
+      <div class="sc-alt">Don't use MUI or Chakra — they'll make it look generic</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-3">SEARCH UX</div>
+      <div class="sc-name">Algolia (free tier) or Meilisearch</div>
+      <div class="sc-tech">instantsearch.js, react-instantsearch</div>
+      <div class="sc-why">Real-time search-as-you-type with typo tolerance. Algolia's free tier covers 10K searches/month — enough for v1. Meilisearch is self-hosted alternative (free, fast, open source). Both give you the pub.dev style "results appear instantly" search UX.</div>
+      <div class="sc-alt">Can start with PostgreSQL full-text search (pg_tsvector) to avoid extra dependency</div>
+    </div>
+  </div>
+
+  <h2>GitHub Crawler (Auto-Indexer)</h2>
+  <div class="stack-grid">
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-4">CRAWLER</div>
+      <div class="sc-name">Python 3.12 <span class="badge bg-py">Python</span></div>
+      <div class="sc-tech">PyGithub, httpx, asyncio, APScheduler</div>
+      <div class="sc-why">GitHub API is well-supported in Python. asyncio for parallel requests (respect rate limits while crawling fast). APScheduler runs the crawler every 6 hours automatically. Python is faster to write one-off scripts in than TypeScript. This is a background service — startup speed doesn't matter.</div>
+      <div class="sc-alt">Alt: Node.js with octokit (also fine)</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-4">QUALITY SCORER</div>
+      <div class="sc-name">Python script</div>
+      <div class="sc-tech">PyGithub, semver, custom scoring logic</div>
+      <div class="sc-why">Reads GitHub API signals: last_commit_date, open_issues_count, has_ci (Actions), star_count, has_readme, has_examples, has_tests. Computes 0–100 score. Runs after every crawl cycle. Stores results in PostgreSQL. Can use basic LLM call to auto-categorize library type (sensor/display/protocol).</div>
+      <div class="sc-alt">This is your most valuable first feature — do not skip it</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-flex">FLEXIBLE</div>
+      <div class="sc-layer sl-4">JOB QUEUE</div>
+      <div class="sc-name">BullMQ or simple cron</div>
+      <div class="sc-tech">bullmq, redis, node-cron</div>
+      <div class="sc-why">For v1 — a simple cron job that runs the Python crawler script every 6 hours is fine. For v2 when you have thousands of packages updating constantly — BullMQ with Redis gives you a proper job queue with retries, priorities, and monitoring.</div>
+      <div class="sc-alt">Start simple: just a cron job. Add queues when you need scale.</div>
+    </div>
+  </div>
+
+  <h2>Infrastructure</h2>
+  <div class="stack-grid">
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-5">HOSTING</div>
+      <div class="sc-name">Vercel + Railway</div>
+      <div class="sc-tech">vercel (web), railway (api + db + redis)</div>
+      <div class="sc-why">Vercel for Next.js (free tier, automatic deploys from GitHub). Railway for everything else — PostgreSQL, the Hono API, Redis, the Python crawler. Railway is $5/month and handles all your backend in one place. No DevOps needed at all in v1.</div>
+      <div class="sc-alt">Alt later: AWS / GCP when you need enterprise features</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-5">CI/CD</div>
+      <div class="sc-name">GitHub Actions</div>
+      <div class="sc-tech">actions/checkout, bun setup, rust toolchain</div>
+      <div class="sc-why">Free for public repos. Auto-deploy on push to main. Run tests before deploy. Build and release the Rust CLI binary for all platforms automatically. Build Docker images for the crawler. This is how PlatformIO does it and it works perfectly.</div>
+      <div class="sc-alt">Circular benefit: your users use GitHub Actions, so your tool must work there</div>
+    </div>
+    <div class="sc">
+      <div class="sc-decision sd-rec">RECOMMENDED</div>
+      <div class="sc-layer sl-5">MONOREPO TOOL</div>
+      <div class="sc-name">Turborepo + pnpm</div>
+      <div class="sc-tech">turbo, pnpm workspaces</div>
+      <div class="sc-why">All your TypeScript code (web, api, shared types) in one repo. pnpm workspaces link packages together. Turborepo caches builds — only rebuilds what changed. Share types between frontend and backend without publishing to npm. Rust CLI lives in the same repo as a separate workspace.</div>
+      <div class="sc-alt">Could use Nx — Turborepo is simpler for this project size</div>
+    </div>
+  </div>
+
+  <h2>Quick reference — the full stack in one table</h2>
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Version</th><th>Decision</th></tr>
+    <tr><td>CLI language</td><td>Rust</td><td>1.77+</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>CLI arg parsing</td><td>clap</td><td>4.x</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>CLI HTTP client</td><td>reqwest + tokio</td><td>latest</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>Dep resolver</td><td>pubgrub crate</td><td>latest</td><td class="pick">✓ Use this — don't invent</td></tr>
+    <tr><td>API language</td><td>TypeScript (Bun)</td><td>Bun 1.x</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>API framework</td><td>Hono</td><td>4.x</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>ORM</td><td>Drizzle ORM</td><td>latest</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>Database</td><td>PostgreSQL</td><td>16</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>File storage</td><td>Cloudflare R2</td><td>—</td><td class="pick">✓ Use this (free egress)</td></tr>
+    <tr><td>Cache</td><td>Redis (Upstash)</td><td>—</td><td class="maybe">~ Add in v1.1</td></tr>
+    <tr><td>Web framework</td><td>Next.js 15</td><td>App Router</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>Styling</td><td>Tailwind + shadcn</td><td>latest</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>Search</td><td>pg_tsvector → Meilisearch</td><td>—</td><td class="maybe">~ Start with pg, upgrade later</td></tr>
+    <tr><td>Crawler</td><td>Python + PyGithub</td><td>3.12</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>Hosting (web)</td><td>Vercel</td><td>—</td><td class="pick">✓ Free tier is enough for v1</td></tr>
+    <tr><td>Hosting (api+db)</td><td>Railway</td><td>—</td><td class="pick">✓ $5/mo covers everything in v1</td></tr>
+    <tr><td>CI/CD</td><td>GitHub Actions</td><td>—</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>Monorepo</td><td>Turborepo + pnpm</td><td>latest</td><td class="pick">✓ Use this</td></tr>
+    <tr><td>Auth</td><td>Clerk or Auth.js</td><td>—</td><td class="maybe">~ Add in v1.1 (for publishing)</td></tr>
+    <tr><td>GraphQL</td><td>—</td><td>—</td><td class="skip">✗ Skip — REST is fine for this</td></tr>
+    <tr><td>Kubernetes</td><td>—</td><td>—</td><td class="skip">✗ Skip — way too early</td></tr>
+    <tr><td>Microservices</td><td>—</td><td>—</td><td class="skip">✗ Skip — monolith first</td></tr>
+  </table>
+</div>
+</div>
+
+<!-- ══════════ P3: REPO STRUCTURE ══════════ -->
+<div class="panel" id="p3">
+<div class="wrap">
+  <div class="page-title">Monorepo Structure</div>
+  <div class="page-sub">Everything in one repo — web, api, cli, crawler, shared types. Turborepo manages the builds.</div>
+
+  <div class="repo-tree">
+    <div class="repo-header">
+      <div class="rh-dot" style="background:#ff5f57"></div>
+      <div class="rh-dot" style="background:#febc2e"></div>
+      <div class="rh-dot" style="background:#28c840"></div>
+      &nbsp;esp32pm/ (monorepo root)
+    </div>
+    <div class="repo-body">
+
+<div class="rr"><span class="rf">📄 README.md</span></div>
+<div class="rr"><span class="rf">📄 turbo.json</span><span class="rc">turborepo build pipeline config</span></div>
+<div class="rr"><span class="rf">📄 pnpm-workspace.yaml</span><span class="rc">defines workspace packages</span></div>
+<div class="rr"><span class="rf">📄 .github/workflows/</span><span class="rc">CI/CD pipelines</span></div>
+<div class="rr"><span class="rf">📄 docker-compose.yml</span><span class="rc">local dev: postgres + redis</span></div>
+<div style="height:6px"></div>
+
+<div class="rr"><span class="rd">📁 apps/</span><span class="rc">deployable applications</span></div>
+<div class="rr"><span class="ri">│  </span><span class="rd">📁 web/</span><span class="rt rt-web">Next.js</span><span class="rc">the registry website (pub.dev equivalent)</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rd">📁 app/</span><span class="rc">Next.js App Router pages</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 page.tsx</span><span class="rc">homepage + search</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 packages/[name]/page.tsx</span><span class="rc">package detail page</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 packages/[name]/[version]/page.tsx</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rd">📁 components/</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 PackageCard.tsx</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 SearchBar.tsx</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 CompatMatrix.tsx</span><span class="rc">ESP32 variant table</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 MemoryWidget.tsx</span><span class="rc">flash+ram bars</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 QualityScore.tsx</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 package.json</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 tailwind.config.ts</span></div>
+<div style="height:4px"></div>
+
+<div class="rr"><span class="ri">│  </span><span class="rd">📁 api/</span><span class="rt rt-api">Hono + Bun</span><span class="rc">registry REST API</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rd">📁 src/</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rd">📁 routes/</span></div>
+<div class="rr"><span class="ri">│  │  │  │  </span><span class="rf">📄 packages.ts</span><span class="rc">GET /packages, GET /packages/:name</span></div>
+<div class="rr"><span class="ri">│  │  │  │  </span><span class="rf">📄 search.ts</span><span class="rc">GET /search?q=bme280</span></div>
+<div class="rr"><span class="ri">│  │  │  │  </span><span class="rf">📄 publish.ts</span><span class="rc">POST /packages (authenticated)</span></div>
+<div class="rr"><span class="ri">│  │  │  │  </span><span class="rf">📄 download.ts</span><span class="rc">GET /packages/:name/:version/tarball</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rd">📁 db/</span></div>
+<div class="rr"><span class="ri">│  │  │  │  </span><span class="rf">📄 schema.ts</span><span class="rc">drizzle schema — packages, versions, scores</span></div>
+<div class="rr"><span class="ri">│  │  │  │  </span><span class="rf">📄 migrations/</span><span class="rc">SQL migration files</span></div>
+<div class="rr"><span class="ri">│  │  │  │  </span><span class="rf">📄 index.ts</span><span class="rc">db connection</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rd">📁 middleware/</span></div>
+<div class="rr"><span class="ri">│  │  │  │  </span><span class="rf">📄 auth.ts</span><span class="rc">token validation for publish</span></div>
+<div class="rr"><span class="ri">│  │  │  │  </span><span class="rf">📄 ratelimit.ts</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 index.ts</span><span class="rc">app entry point</span></div>
+<div style="height:4px"></div>
+
+<div class="rr"><span class="ri">│  </span><span class="rd">📁 crawler/</span><span class="rt rt-api" style="background:rgba(255,212,59,0.15);color:#ffd43b">Python</span><span class="rc">GitHub auto-indexer</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 main.py</span><span class="rc">entry — runs every 6h via cron</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 github_crawler.py</span><span class="rc">searches GitHub for ESP32 libs</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 quality_scorer.py</span><span class="rc">computes 0-100 score per package</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 metadata_extractor.py</span><span class="rc">parses library.properties / esp32pm.json</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 db_writer.py</span><span class="rc">upserts into postgres</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 requirements.txt</span></div>
+<div style="height:4px"></div>
+
+<div class="rr"><span class="ri">│  </span><span class="rd">📁 cli/</span><span class="rt rt-cli">Rust</span><span class="rc">the esp32pm command-line tool</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 Cargo.toml</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rd">📁 src/</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 main.rs</span><span class="rc">CLI entry + clap commands</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 commands/install.rs</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 commands/search.rs</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 commands/build.rs</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 resolver/mod.rs</span><span class="rc">pubgrub integration</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 registry/client.rs</span><span class="rc">HTTP calls to API</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 toolchain/manager.rs</span><span class="rc">download+manage compilers</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 cmake/generator.rs</span><span class="rc">generates CMakeLists.txt</span></div>
+<div class="rr"><span class="ri">│  │  │  </span><span class="rf">📄 memory/checker.rs</span><span class="rc">flash+ram budget check</span></div>
+<div style="height:4px"></div>
+
+<div class="rr"><span class="rd">📁 packages/</span><span class="rc">shared code — imported by apps above</span></div>
+<div class="rr"><span class="ri">│  </span><span class="rd">📁 types/</span><span class="rt rt-shared">Shared</span><span class="rc">TypeScript types used by web + api</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 src/package.ts</span><span class="rc">Package, Version, QualityScore types</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 src/board.ts</span><span class="rc">Board, Chip, Framework types</span></div>
+<div class="rr"><span class="ri">│  </span><span class="rd">📁 core/</span><span class="rt rt-shared">Shared</span><span class="rc">business logic shared between api + cli</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 src/semver.ts</span><span class="rc">version range parsing</span></div>
+<div class="rr"><span class="ri">│  │  </span><span class="rf">📄 src/boards.json</span><span class="rc">board definition database</span></div>
+    </div>
+  </div>
+
+  <div class="tip"><strong>Why a monorepo?</strong> The web app and the API share the same TypeScript types for Package, Version, QualityScore etc. With a monorepo + pnpm workspaces, you import <span style="font-family:var(--mono);font-size:11px">from "@esp32pm/types"</span> in both — no publishing to npm, no version mismatch, instant updates everywhere. The Rust CLI lives in the same repo but is a completely independent Cargo workspace.</div>
+</div>
+</div>
+
+<!-- ══════════ P4: BUILD ROADMAP ══════════ -->
+<div class="panel" id="p4">
+<div class="wrap">
+  <div class="page-title">Build Roadmap</div>
+  <div class="page-sub">Exact phases, tasks, and the reasoning behind every ordering decision.</div>
+
+  <div class="phase-wrap">
+
+    <div class="phase">
+      <div class="phase-head" onclick="togglePhase('ph1')">
+        <div class="ph-num p1-num">01</div>
+        <div class="ph-info">
+          <div class="ph-title">Foundation — Database + Crawler + Basic Website</div>
+          <div class="ph-time p1-time">Weeks 1–4 — Build alone or with 1 other</div>
+        </div>
+        <div class="ph-arr">▼</div>
+      </div>
+      <div class="phase-body" id="ph1">
+        <div class="phase-why">
+          <strong>Why start here:</strong> Data before UI. A beautiful website with no packages is useless. A simple website with 1,000 real packages is immediately valuable. Get real data first, build the pretty parts second.
+        </div>
+        <div class="task-list">
+          <div class="task"><div class="task-name">PostgreSQL schema</div><div class="task-detail">Tables: packages, versions, quality_scores, boards, frameworks. Full-text search indexes. Drizzle migrations.</div><div class="task-file">apps/api/src/db/schema.ts</div></div>
+          <div class="task"><div class="task-name">GitHub crawler v1</div><div class="task-detail">Search GitHub for repos tagged "esp32", "arduino-esp32", "espidf". Pull metadata: stars, last_commit, description, topics, has_ci, has_readme.</div><div class="task-file">apps/crawler/github_crawler.py</div></div>
+          <div class="task"><div class="task-name">Metadata extractor</div><div class="task-detail">Parse library.properties (Arduino format), idf_component.yml (IDF format), and any esp32pm.json if present. Fall back to README parsing with regex.</div><div class="task-file">apps/crawler/metadata_extractor.py</div></div>
+          <div class="task"><div class="task-name">Quality scorer v1</div><div class="task-detail">Score formula: last_commit (20pts) + has_ci (20pts) + readme_length (15pts) + star_count (15pts) + has_examples (15pts) + issues_ratio (15pts).</div><div class="task-file">apps/crawler/quality_scorer.py</div></div>
+          <div class="task"><div class="task-name">REST API — read only</div><div class="task-detail">GET /packages (list, paginated, sortable), GET /packages/:name (detail), GET /search?q= (full-text). No auth needed yet.</div><div class="task-file">apps/api/src/routes/packages.ts</div></div>
+          <div class="task"><div class="task-name">Website — homepage + search</div><div class="task-detail">Search bar, package cards with quality score badge, framework tags, filter sidebar. Exact design from the mockup we built.</div><div class="task-file">apps/web/app/page.tsx</div></div>
+          <div class="task"><div class="task-name">Package detail page</div><div class="task-detail">Name, description, install command, quality breakdown, GitHub stats, framework tags, version history. No compatibility matrix yet.</div><div class="task-file">apps/web/app/packages/[name]/page.tsx</div></div>
+          <div class="task"><div class="task-name">Deploy to production</div><div class="task-detail">Vercel for web, Railway for API + PostgreSQL. GitHub Actions: test on PR, deploy on merge to main. Custom domain: esp32pm.dev</div><div class="task-file">.github/workflows/deploy.yml</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head" onclick="togglePhase('ph2')">
+        <div class="ph-num p2-num">02</div>
+        <div class="ph-info">
+          <div class="ph-title">Killer Features — Compat Matrix + Memory Widget + CLI v1</div>
+          <div class="ph-time p2-time">Weeks 5–10 — This is where you differentiate</div>
+        </div>
+        <div class="ph-arr">▼</div>
+      </div>
+      <div class="phase-body" id="ph2">
+        <div class="phase-why">
+          <strong>Why this is phase 2:</strong> Once the basic site is live and getting some users, these are the features that make people tell their friends. The compatibility matrix and memory widget don't exist anywhere else. Ship them fast while momentum is building.
+        </div>
+        <div class="task-list">
+          <div class="task"><div class="task-name">ESP32 variant compat matrix</div><div class="task-detail">QEMU-based CI: build each library for ESP32, S2, S3, C3, C6. Record pass/fail. Show green/red matrix on package page. Start with QEMU simulation, add real boards later.</div><div class="task-file">apps/crawler/compat_tester.py</div></div>
+          <div class="task"><div class="task-name">Memory footprint measurement</div><div class="task-detail">Build each lib for each target, parse .map file output, extract text section size (Flash) and bss+data (RAM). Store in versions table. Show on package page.</div><div class="task-file">apps/crawler/memory_measurer.py</div></div>
+          <div class="task"><div class="task-name">Memory widget (frontend)</div><div class="task-detail">Interactive memory bar on package page. Select your board → see Flash + RAM impact. Add multiple packages → see cumulative total. This is your #1 viral feature.</div><div class="task-file">apps/web/components/MemoryWidget.tsx</div></div>
+          <div class="task"><div class="task-name">Compat matrix component</div><div class="task-detail">Color-coded table: ✓ tested / ? unknown / ✗ broken per ESP32 variant per framework. Click cell → see test log.</div><div class="task-file">apps/web/components/CompatMatrix.tsx</div></div>
+          <div class="task"><div class="task-name">CLI v1 (Rust) — install + search</div><div class="task-detail">esp32pm search [query], esp32pm install [package], esp32pm list. Reads/writes esp32pm.toml. Downloads to .esp32pm/packages/. No CMake generation yet.</div><div class="task-file">apps/cli/src/</div></div>
+          <div class="task"><div class="task-name">esp32pm.toml parser (Rust)</div><div class="task-detail">Parse the project config file. Validate board, framework, dep semver ranges. Serde + toml crate. This is the foundation all other CLI commands build on.</div><div class="task-file">apps/cli/src/config/mod.rs</div></div>
+          <div class="task"><div class="task-name">Lock file generation (Rust)</div><div class="task-detail">Run pubgrub resolver against the registry. Write esp32pm.lock with exact resolved versions. On reinstall, read lock file for exact versions.</div><div class="task-file">apps/cli/src/resolver/mod.rs</div></div>
+          <div class="task"><div class="task-name">Arduino ↔ IDF bridge data</div><div class="task-detail">Manually curate a JSON mapping: top 100 Arduino libs → their IDF equivalents. Show "IDF equivalent" section on Arduino package pages. Ship the data before building fancy auto-detection.</div><div class="task-file">packages/core/src/framework_bridge.json</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head" onclick="togglePhase('ph3')">
+        <div class="ph-num p3-num">03</div>
+        <div class="ph-info">
+          <div class="ph-title">Complete CLI — Build + Flash + CMake generation</div>
+          <div class="ph-time p3-time">Weeks 11–16 — Making the full workflow work</div>
+        </div>
+        <div class="ph-arr">▼</div>
+      </div>
+      <div class="phase-body" id="ph3">
+        <div class="phase-why">
+          <strong>Why phase 3:</strong> The CLI becomes truly useful only when it handles the FULL workflow — not just install but also build and flash. CMake generation is the hardest engineering task in the whole project. Do it after the website proves the concept.
+        </div>
+        <div class="task-list">
+          <div class="task"><div class="task-name">CMake generator (Rust)</div><div class="task-detail">Generate .esp32pm/cmake/esp32pm_deps.cmake, toolchain file, root CMakeLists.txt from esp32pm.toml. This is the hardest single task in the project.</div><div class="task-file">apps/cli/src/cmake/generator.rs</div></div>
+          <div class="task"><div class="task-name">Toolchain manager (Rust)</div><div class="task-detail">Download xtensa-esp32s3-gcc@12.2.0 tarball to global cache. Verify SHA256. Extract. Create symlink in project. Support: ESP32, S2, S3, C3, C6 toolchains.</div><div class="task-file">apps/cli/src/toolchain/manager.rs</div></div>
+          <div class="task"><div class="task-name">esp32pm build command</div><div class="task-detail">Calls cmake --configure then ninja. Shows progress. Parses .map output for memory report. Shows Flash/RAM breakdown after build.</div><div class="task-file">apps/cli/src/commands/build.rs</div></div>
+          <div class="task"><div class="task-name">esp32pm flash command</div><div class="task-detail">Wraps esptool.py. Auto-detects USB port. Flashes firmware.bin. Opens serial monitor. Works on Windows, macOS, Linux.</div><div class="task-file">apps/cli/src/commands/flash.rs</div></div>
+          <div class="task"><div class="task-name">Memory budget checker</div><div class="task-detail">Before install: check if adding this lib would exceed flash_budget or ram_budget in esp32pm.toml. Show warning with alternatives if it would. The killer CLI feature.</div><div class="task-file">apps/cli/src/memory/checker.rs</div></div>
+          <div class="task"><div class="task-name">Global cache management</div><div class="task-detail">~/.esp32pm/ with package cache, toolchain cache, registry metadata cache. esp32pm cache info (show disk usage), esp32pm cache clean --older-than 90d.</div><div class="task-file">apps/cli/src/cache/mod.rs</div></div>
+          <div class="task"><div class="task-name">Publish flow (API + CLI)</div><div class="task-detail">esp32pm publish: validates esp32pm.json, builds tarball, uploads to R2, creates DB record. API: POST /packages with auth token. Auth: email/token login.</div><div class="task-file">apps/cli/src/commands/publish.rs</div></div>
+          <div class="task"><div class="task-name">VS Code extension v1</div><div class="task-detail">Sidebar showing installed packages with quality scores and memory bars. One-click install from VS Code. Calls CLI binary under the hood.</div><div class="task-file">apps/vscode-ext/src/</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head" onclick="togglePhase('ph4')">
+        <div class="ph-num p4-num">04</div>
+        <div class="ph-info">
+          <div class="ph-title">Growth — Community + Private Registry + Monetization</div>
+          <div class="ph-time p4-time">Month 5+ — After you have real users</div>
+        </div>
+        <div class="ph-arr">▼</div>
+      </div>
+      <div class="phase-body" id="ph4">
+        <div class="phase-why">
+          <strong>Why phase 4 last:</strong> Don't build monetization before you have users. Don't build a private registry before companies are asking for it. Phases 1–3 get you users. Phase 4 turns users into a business.
+        </div>
+        <div class="task-list">
+          <div class="task"><div class="task-name">Private registry (SaaS)</div><div class="task-detail">Teams host private packages. Same API as public registry. Per-seat pricing. This is your main revenue source — companies pay for internal component management.</div></div>
+          <div class="task"><div class="task-name">User accounts + publisher profiles</div><div class="task-detail">Sign up, claim your GitHub packages, verified publisher badge. Like npm's "verified" or pub.dev's publisher verification.</div></div>
+          <div class="task"><div class="task-name">SBOM generation</div><div class="task-detail">esp32pm sbom — generates a Software Bill of Materials in SPDX format. Required by US EO 14028 for connected devices. Huge enterprise selling point.</div></div>
+          <div class="task"><div class="task-name">Real hardware CI farm</div><div class="task-detail">Physical ESP32 boards in CI. Real hardware test results on the compat matrix. Start with 5 boards (ESP32, S3, C3, C6, P4), expand as revenue allows.</div></div>
+          <div class="task"><div class="task-name">esp32pm translate command</div><div class="task-detail">esp32pm translate --from arduino --to espidf — shows IDF equivalents for all your deps. Auto-suggests migration path when switching frameworks.</div></div>
+          <div class="task"><div class="task-name">Security scanning</div><div class="task-detail">CVE scanning per package. Alert package page if a vulnerability is found. esp32pm audit command. Critical for enterprise customers.</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ══════════ P5: AI AGENT PROMPT ══════════ -->
+<div class="panel" id="p5">
+<div class="wrap">
+  <div class="page-title">AI Agent Prompt — for VS Code / Cursor / Claude</div>
+  <div class="page-sub">Paste this as your project context. Give it once at the start of every session. The AI agent will understand exactly what you're building, why every decision was made, and what to do next.</div>
+
+  <h2>The complete context prompt</h2>
+
+  <div class="prompt-box">
+    <div class="pb-header">
+      <div class="pb-title">SYSTEM_PROMPT.md — paste this to your AI agent at session start</div>
+      <button class="pb-copy" onclick="copyPrompt()">Copy All</button>
+    </div>
+    <div class="pb-body" id="prompt-content">
+<span class="ph"># ESP32PM — Project Context for AI Agent</span>
+
+<span class="pc">## What I am building</span>
+
+I am building <span class="ps">esp32pm</span> — a package manager and registry for ESP32 microcontroller libraries.
+Think of it as the combination of:
+- <span class="pk">pub.dev</span> (Flutter's package registry website) — for discovery and browsing
+- <span class="pk">npm</span> (Node.js package manager) — for the CLI install/update/lock workflow
+- But purpose-built for ESP32 embedded firmware development
+
+<span class="pc">## The core problem being solved</span>
+
+The ESP32 ecosystem has 14,000+ libraries scattered across:
+- GitHub (10,000+ repos with NO package manager)
+- Arduino Library Manager (1,219 libs, GUI only, no CLI, no dep resolution)
+- ESP-IDF Component Registry (500 libs, IDF only)
+- PlatformIO registry (2,000 libs, poor quality control)
+
+No single tool covers all of them. No tool has:
+- Hardware compatibility matrix (does this lib work on ESP32-S3 vs C3?)
+- Memory footprint display (how much Flash + RAM does this cost?)
+- Framework awareness (Arduino vs ESP-IDF vs MicroPython)
+- Quality scores (is this library abandoned or actively maintained?)
+
+<span class="pc">## Monorepo structure</span>
+
+<span class="pv">esp32pm/                    ← monorepo root (Turborepo + pnpm)</span>
+├── apps/
+│   ├── web/                <span class="pc">← Next.js 15 registry website (the pub.dev equivalent)</span>
+│   ├── api/                <span class="pc">← Hono + Bun REST API (registry backend)</span>
+│   ├── crawler/            <span class="pc">← Python 3.12 GitHub auto-indexer</span>
+│   └── cli/                <span class="pc">← Rust CLI tool (the "esp32pm" command)</span>
+└── packages/
+    ├── types/              <span class="pc">← Shared TypeScript types (web + api)</span>
+    └── core/               <span class="pc">← Shared business logic (boards.json, semver utils)</span>
+
+<span class="pc">## Tech stack decisions (DO NOT change these without asking)</span>
+
+<span class="pk">CLI:</span>        Rust — fast cold start, single binary, embedded community respects it
+<span class="pk">Resolver:</span>   pubgrub crate — gold standard dep resolution (same as pip + Cargo)
+<span class="pk">API:</span>        Hono on Bun — fast, TypeScript-native, simple
+<span class="pk">Database:</span>   PostgreSQL 16 + Drizzle ORM — pg_tsvector for search, JSONB for metadata
+<span class="pk">Storage:</span>    Cloudflare R2 — package tarballs, zero egress fees
+<span class="pk">Web:</span>        Next.js 15 App Router — SSR for SEO, Server Components
+<span class="pk">Styling:</span>    Tailwind CSS + shadcn/ui — dark terminal aesthetic
+<span class="pk">Crawler:</span>    Python + PyGithub — GitHub API calls, asyncio, APScheduler
+<span class="pk">Hosting:</span>    Vercel (web) + Railway (api + postgres + redis)
+<span class="pk">CI/CD:</span>      GitHub Actions — deploy on merge, CLI binary releases
+
+<span class="pc">## Project config file format (esp32pm.toml)</span>
+
+[project]
+name    = "my_project"
+version = "1.0.0"
+
+[target]
+board     = "esp32-devkitc-v4"
+chip      = "esp32s3"
+framework = "arduino"           <span class="pc"># arduino | espidf | micropython</span>
+toolchain = "xtensa-esp32s3-gcc@12.2.0"  <span class="pc"># LOCKED version</span>
+
+[budget]
+flash = "80%"    <span class="pc"># warn if total Flash exceeds this</span>
+ram   = "70%"    <span class="pc"># warn if total RAM exceeds this</span>
+
+[dependencies]
+bme280_idf  = "^2.4.0"
+FastLED     = "^3.7.0"
+
+<span class="pc">## Package metadata format (esp32pm.json — in every published library)</span>
+
+{
+  "name": "bme280_idf",
+  "version": "2.4.1",
+  "frameworks": ["arduino", "espidf"],
+  "targets": ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c6"],
+  "idf_version": ">=4.4.0",
+  "memory": { "flash_kb": 14.2, "ram_kb": 1.8 },
+  "peripherals": ["i2c", "spi"],
+  "sensors": ["BME280"],
+  "category": "sensor",
+  "dependencies": {}
+}
+
+<span class="pc">## What the CLI does (commands)</span>
+
+<span class="ps">esp32pm init</span>           → creates esp32pm.toml + project scaffold
+<span class="ps">esp32pm add [pkg]</span>      → adds dep to toml, does NOT download
+<span class="ps">esp32pm install</span>        → resolves graph, downloads, generates CMake files, writes lock
+<span class="ps">esp32pm build</span>          → runs cmake + ninja, shows memory report after
+<span class="ps">esp32pm flash</span>          → wraps esptool, auto-detects port, flashes firmware.bin
+<span class="ps">esp32pm search [query]</span> → queries registry, shows results in terminal
+<span class="ps">esp32pm check memory</span>   → shows Flash + RAM impact BEFORE installing
+<span class="ps">esp32pm publish</span>        → publishes library to registry
+
+<span class="pc">## Folder structure after esp32pm install runs</span>
+
+my_project/
+├── esp32pm.toml        <span class="pc">← YOU write, always commit</span>
+├── esp32pm.lock        <span class="pc">← AUTO-generated, always commit</span>
+├── src/main.cpp        <span class="pc">← YOUR code</span>
+├── include/            <span class="pc">← YOUR headers</span>
+├── .esp32pm/           <span class="pc">← AUTO-managed, git-IGNORED</span>
+│   ├── packages/       <span class="pc">← extracted library source code</span>
+│   │   └── bme280_idf@2.4.1/</span>
+│   └── cmake/          <span class="pc">← generated CMake glue files</span>
+│       ├── esp32pm_deps.cmake
+│       └── toolchain_xtensa.cmake
+└── build/              <span class="pc">← compiled output, git-IGNORED</span>
+    └── firmware.bin
+
+<span class="pc">## ESP32-specific features that don't exist in any other PM</span>
+
+1. <span class="pk">Hardware compat matrix</span>   → CI-tested pass/fail per ESP32 variant (S2/S3/C3/C6/H2/P4)
+2. <span class="pk">Memory footprint display</span>  → Flash + RAM cost per package, per chip
+3. <span class="pk">Memory budget checker</span>    → warns if install would exceed esp32pm.toml budget
+4. <span class="pk">Framework awareness</span>      → every package tagged: Arduino / ESP-IDF / MicroPython
+5. <span class="pk">Arduino ↔ IDF bridge</span>     → shows IDF equivalents for Arduino libs, and vice versa
+6. <span class="pk">Quality score (0-100)</span>    → auto-computed from GitHub signals (maintenance, tests, etc)
+
+<span class="pc">## Current build phase</span>
+
+<span class="ps">PHASE 1 (current)</span> — Foundation
+- [ ] PostgreSQL schema (packages, versions, quality_scores tables)
+- [ ] GitHub crawler (Python — indexes ESP32 libs from GitHub)
+- [ ] Quality scorer (Python — computes 0-100 score per package)
+- [ ] Registry API (Hono — GET /packages, GET /packages/:name, GET /search)
+- [ ] Registry website (Next.js — search, package list, package detail page)
+- [ ] Deploy (Vercel + Railway)
+
+PHASE 2 — Killer features (after phase 1 is live)
+- Compat matrix, memory widget, CLI v1
+
+PHASE 3 — Full CLI (build + flash + CMake generation)
+
+PHASE 4 — Monetization (private registry, SBOM, enterprise features)
+
+<span class="pc">## Code style and conventions</span>
+
+TypeScript: strict mode, no any, zod for runtime validation
+Rust: clippy clean, no unwrap() in non-test code (use ? operator)
+Python: type hints everywhere, black formatter
+Git: conventional commits (feat: fix: docs: chore:)
+API: REST (not GraphQL), snake_case for JSON fields
+Error messages: clear and actionable — "Flash budget exceeded: LVGL needs 180KB
+              but only 90KB remaining. Consider: U8g2 (8KB) instead."
+
+<span class="pc">## What to never do</span>
+
+- Never use `any` in TypeScript
+- Never use `unwrap()` in Rust production code
+- Never commit .esp32pm/ folders or build/ directories
+- Never store secrets in code — use environment variables
+- Never break the esp32pm.toml format without a migration path
+- Never add a dependency without explaining why in a comment
+    </div>
+  </div>
+
+  <h2>Shorter version — for quick session starts</h2>
+  <div class="prompt-box">
+    <div class="pb-header">
+      <div class="pb-title">SHORT_CONTEXT.md — paste when you don't need full context</div>
+      <button class="pb-copy" onclick="copyShort()">Copy</button>
+    </div>
+    <div class="pb-body" id="short-content">
+<span class="ph"># ESP32PM — Quick Context</span>
+
+I'm building <span class="ps">esp32pm</span> — a package manager + registry for ESP32 libraries.
+Like pub.dev (website) + npm (CLI) but for embedded firmware.
+
+<span class="pk">Stack:</span> Rust CLI, Hono+Bun API, Next.js website, PostgreSQL, Python crawler, Cloudflare R2
+<span class="pk">Monorepo:</span> apps/web, apps/api, apps/cli, apps/crawler, packages/types, packages/core
+<span class="pk">Config file:</span> esp32pm.toml (TOML, like Cargo.toml)
+<span class="pk">Unique features:</span> hardware compat matrix, memory footprint checker, quality scores, framework tags
+
+<span class="pk">Current phase:</span> Phase 1 — building the crawler + API + website
+<span class="pk">Next task:</span> [DESCRIBE WHAT YOU'RE WORKING ON RIGHT NOW]
+    </div>
+  </div>
+
+  <h2>Task-specific prompts — copy when starting a specific feature</h2>
+
+  <div class="stack-grid">
+    <div class="sc">
+      <div class="sc-layer sl-4">WHEN STARTING CRAWLER</div>
+      <div class="sc-name" style="font-size:13px">GitHub Crawler Prompt</div>
+      <div class="sc-why" style="font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--text2)">
+        "Build the GitHub crawler for esp32pm. It should search GitHub for repos with topics: esp32, arduino-esp32, espidf, esp-idf, esp32-library. For each repo, collect: name, description, stars, last_commit_at, open_issues_count, has_ci (has .github/workflows/), has_readme, has_examples (examples/ folder exists), topics, license. Respect GitHub rate limit (5000 req/hr authenticated). Use asyncio for parallel fetching. Store to PostgreSQL via the esp32pm API POST /internal/packages endpoint. Run every 6 hours via APScheduler."
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sc-layer sl-2">WHEN STARTING API</div>
+      <div class="sc-name" style="font-size:13px">Registry API Prompt</div>
+      <div class="sc-why" style="font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--text2)">
+        "Build the esp32pm registry API using Hono on Bun. Endpoints needed: GET /packages (paginated list, sortable by quality/downloads/updated, filterable by framework/category/target), GET /packages/:name (full package detail with all versions), GET /packages/:name/:version (specific version), GET /search?q=&framework=&category= (full-text search via pg_tsvector). Use Drizzle ORM with PostgreSQL. Return snake_case JSON. Include quality_score and memory fields in every package response."
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sc-layer sl-3">WHEN STARTING WEBSITE</div>
+      <div class="sc-name" style="font-size:13px">Registry Website Prompt</div>
+      <div class="sc-why" style="font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--text2)">
+        "Build the esp32pm registry website in Next.js 15 with App Router. Dark terminal aesthetic — black background (#0d1117), green accent (#3fb950), IBM Plex Mono for code, Syne for headings. Pages: / (homepage with search + package list), /packages/[name] (package detail). Package cards show: name, description, quality score badge (0-100), framework tags (Arduino/IDF), memory footprint, last updated. Package detail shows: install command with copy button, ESP32 variant compat matrix table, memory widget bars, quality score breakdown."
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sc-layer sl-1">WHEN STARTING CLI</div>
+      <div class="sc-name" style="font-size:13px">Rust CLI Prompt</div>
+      <div class="sc-why" style="font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--text2)">
+        "Build the esp32pm CLI in Rust. Use clap for argument parsing, reqwest+tokio for async HTTP, serde+toml for config parsing. First implement: `esp32pm search [query]` (calls GET /search, pretty-prints results in terminal), `esp32pm init` (creates esp32pm.toml interactively), `esp32pm add [package]` (adds to toml without downloading). Config file is esp32pm.toml — parse with serde. Global cache at ~/.esp32pm/. Error messages must be actionable — not 'Error: 404' but 'Package bme280 not found. Did you mean bme280_idf?'"
+      </div>
+    </div>
+  </div>
+
+  <div class="tip"><strong>How to use these prompts:</strong> At the START of every VS Code Copilot / Cursor / Claude session, paste the full context prompt. Then describe what you're working on that session. The AI will have all the architectural context it needs and won't suggest things that conflict with your decisions. Refresh the context every session — AI agents don't remember between sessions.</div>
+</div>
+</div>
+
+<script>
+function show(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+  document.querySelectorAll('.ntab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+}
+function togglePhase(id) {
+  const body = document.getElementById(id);
+  const arr = body.previousElementSibling.querySelector('.ph-arr');
+  body.classList.toggle('open');
+  arr.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+function copyPrompt() {
+  const text = document.getElementById('prompt-content').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.pb-copy');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy All', 2000);
+  });
+}
+function copyShort() {
+  const text = document.getElementById('short-content').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btns = document.querySelectorAll('.pb-copy');
+    btns[1].textContent = 'Copied!';
+    setTimeout(() => btns[1].textContent = 'Copy', 2000);
+  });
+}
+</script>
+</body>
+</html>

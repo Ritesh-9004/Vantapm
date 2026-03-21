@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Omnilink — Database Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;
+  --border:#30363d;--border2:#484f58;
+  --green:#3fb950;--green2:#238636;--gdim:rgba(63,185,80,0.12);
+  --blue:#58a6ff;--bdim:rgba(88,166,255,0.1);
+  --amber:#e3b341;--adim:rgba(227,179,65,0.1);
+  --red:#f85149;--rdim:rgba(248,81,73,0.1);
+  --purple:#bc8cff;--pdim:rgba(188,140,255,0.1);
+  --teal:#39d353;
+  --text:#e6edf3;--text2:#8b949e;--text3:#484f58;
+  --mono:'IBM Plex Mono',monospace;
+  --display:'Syne',sans-serif;
+  --body:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.6}
+.nav{display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:100;overflow-x:auto}
+.logo{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green);padding:13px 16px 13px 0;border-right:1px solid var(--border);margin-right:10px;flex-shrink:0}
+.ntab{padding:13px 13px;font-size:12px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s}
+.ntab:hover{color:var(--text)}
+.ntab.on{color:var(--green);border-bottom-color:var(--green)}
+.panel{display:none}.panel.show{display:block}
+.wrap{max-width:920px;margin:0 auto;padding:32px 20px}
+.page-title{font-family:var(--display);font-size:26px;font-weight:800;color:var(--text);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
+h2{font-family:var(--display);font-size:17px;font-weight:700;color:var(--text);margin:26px 0 12px;display:flex;align-items:center;gap:10px}
+h2::after{content:'';flex:1;height:1px;background:var(--border)}
+h3{font-size:13px;font-weight:600;color:var(--text2);margin:14px 0 8px;font-family:var(--mono);letter-spacing:0.5px;text-transform:uppercase}
+
+/* DECISION */
+.decision-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.dc{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative}
+.dc.winner{border-color:var(--green);background:rgba(63,185,80,0.05)}
+.dc.loser{opacity:0.55}
+.dc-name{font-family:var(--mono);font-size:18px;font-weight:600;margin-bottom:4px}
+.dc.winner .dc-name{color:var(--green)}
+.dc.loser .dc-name{color:var(--text2)}
+.dc-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:10px;font-family:var(--mono)}
+.dt-win{background:var(--gdim);color:var(--green)}
+.dt-bad{background:var(--rdim);color:var(--red)}
+.dt-ok{background:var(--adim);color:var(--amber)}
+.dc-body{font-size:11px;color:var(--text2);line-height:1.7}
+.win-badge{position:absolute;top:10px;right:10px;background:var(--green);color:#000;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;font-family:var(--mono)}
+
+/* SCHEMA */
+.schema-file{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.sf-header{padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sf-name{font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px}
+.sf-dot{width:8px;height:8px;border-radius:50%}
+.sf-body{padding:16px 18px;font-family:var(--mono);font-size:12px;line-height:1.95;overflow-x:auto}
+.kw{color:#ff7b72}  /* SQL keywords */
+.ty{color:#79c0ff}  /* types */
+.cm{color:var(--text3);font-style:italic} /* comments */
+.st{color:var(--green)} /* strings */
+.fn{color:#d2a8ff} /* functions */
+.tb{color:var(--amber)} /* table names */
+.cn{color:var(--teal)} /* column names */
+
+/* SETUP STEPS */
+.step-wrap{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:0}
+.sl{display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0}
+.snum{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;flex-shrink:0;z-index:1}
+.sline{width:2px;flex:1;background:var(--border);margin:3px 0}
+.sr{flex:1;padding:0 0 22px 14px}
+.s-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;font-family:var(--display)}
+.s-sub{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6}
+.cmd{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:var(--mono);font-size:12px;line-height:2;color:var(--text)}
+.cg{color:var(--green)}
+.cc{color:var(--text3);font-style:italic}
+
+/* COMPARE TABLE */
+table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0 20px}
+th{padding:9px 12px;background:var(--bg3);font-weight:500;text-align:left;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:11px}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2)}
+td:first-child{color:var(--text);font-weight:500;font-size:12px}
+tr:last-child td{border-bottom:none}
+.g{color:var(--green);font-weight:500}
+.r{color:var(--red)}
+.a{color:var(--amber)}
+
+/* TIPS */
+.tip{background:var(--bdim);border-left:2px solid var(--blue);border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:var(--text2);margin:12px 0;line-height:1.7}
+.tip strong{color:var(--text)}
+.warn{background:var(--adim);border-left:2px solid var(--amber);border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:var(--text2);margin:12px 0}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="logo">omnilink<span style="color:var(--text2)">/db</span></div>
+  <div class="ntab on" onclick="show('p1',this)">Decision</div>
+  <div class="ntab" onclick="show('p2',this)">Full Schema</div>
+  <div class="ntab" onclick="show('p3',this)">Local Setup</div>
+  <div class="ntab" onclick="show('p4',this)">Production</div>
+  <div class="ntab" onclick="show('p5',this)">Drizzle ORM</div>
+</div>
+
+<!-- ═══════════ P1: DECISION ═══════════ -->
+<div class="panel show" id="p1">
+<div class="wrap">
+  <div class="page-title">Database Decision</div>
+  <div class="page-sub">Supabase vs Railway vs Neon — what to actually use for omnilink</div>
+
+  <h2>The 3 real options evaluated</h2>
+  <div class="decision-grid">
+
+    <div class="dc loser">
+      <div class="dc-name">Supabase</div>
+      <div class="dc-tag dt-bad">SKIP FOR NOW</div>
+      <div class="dc-body">
+        Supabase = PostgreSQL + Auth + Storage + Realtime + Edge Functions + Auto-generated API all bundled together.<br><br>
+        For omnilink this is OVERKILL. You are building your own API with Hono. You don't need Supabase's auto-generated REST API — it conflicts with your custom API. You don't need their auth layer — you'll build your own token system. You're paying for 5 features you won't use.<br><br>
+        Free tier pauses after 7 days of inactivity — breaks the crawler. Pro is $25/month. Too much for a DB you're only using as plain Postgres.
+      </div>
+    </div>
+
+    <div class="dc winner">
+      <div class="win-badge">USE THIS</div>
+      <div class="dc-name">Railway</div>
+      <div class="dc-tag dt-win">RECOMMENDED</div>
+      <div class="dc-body">
+        Railway = just PostgreSQL. Pay for what you use. No bundled features you don't need. Runs your API + DB + Redis + Python crawler all in one place from one dashboard.<br><br>
+        $5/month Hobby covers everything for v1. Never pauses. One-click Postgres deploy. Automatic backups on Pro. Direct DATABASE_URL connection string. Works perfectly with Drizzle ORM.<br><br>
+        You already chose Railway for the full stack. Keep everything in one place.
+      </div>
+    </div>
+
+    <div class="dc">
+      <div class="dc-name">Neon</div>
+      <div class="dc-tag dt-ok">GOOD ALTERNATIVE</div>
+      <div class="dc-body">
+        Neon = serverless PostgreSQL. Scales to zero when idle (free). Instant database branching — clone your prod DB for testing in seconds. Great for solo developers.<br><br>
+        The "scales to zero" feature means a cold start delay (0.5–3s) on first query. For a package registry that serves millions of package downloads, cold starts are bad. Railway's always-on Postgres is better for a registry workload.<br><br>
+        Consider Neon for development branches, Railway for production.
+      </div>
+    </div>
+
+  </div>
+
+  <h2>Why not Supabase specifically — the honest breakdown</h2>
+  <table>
+    <tr><th>Supabase feature</th><th>Do you need it?</th><th>Why not</th></tr>
+    <tr><td>PostgreSQL database</td><td class="g">✓ Yes</td><td>But Railway gives you the same Postgres without the bundle</td></tr>
+    <tr><td>Auto-generated REST API</td><td class="r">✗ No</td><td>You're building your own Hono API — Supabase's auto-API conflicts</td></tr>
+    <tr><td>Authentication system</td><td class="r">✗ No</td><td>You need a custom token-based publish system, not email/OAuth auth</td></tr>
+    <tr><td>File storage</td><td class="r">✗ No</td><td>You're using Cloudflare R2 for package tarballs</td></tr>
+    <tr><td>Realtime subscriptions</td><td class="r">✗ No</td><td>Package registry doesn't need realtime WebSocket features</td></tr>
+    <tr><td>Edge functions</td><td class="r">✗ No</td><td>Your API runs on Hono/Bun, not Supabase edge functions</td></tr>
+    <tr><td>Row-level security</td><td class="a">~ Maybe later</td><td>Useful for private registries in v2 — not needed in v1</td></tr>
+    <tr><td>Dashboard / Studio UI</td><td class="a">~ Nice to have</td><td>Railway also has a database viewer built in</td></tr>
+  </table>
+
+  <div class="tip"><strong>The rule:</strong> Use Supabase when you want their whole backend bundle. Use Railway Postgres when you just need a great PostgreSQL database and nothing else. For omnilink — you need PostgreSQL, your own API, Cloudflare R2. Railway is the right fit.</div>
+
+  <h2>Final answer</h2>
+  <div style="background:var(--gdim);border:1px solid var(--green);border-radius:12px;padding:18px 20px;font-size:13px;color:var(--text2);line-height:1.8">
+    <strong style="color:var(--green);display:block;font-size:14px;margin-bottom:8px">Use Railway PostgreSQL 16</strong>
+    Deploy it alongside your API and crawler on Railway. $5/month Hobby plan covers all of v1. One dashboard for your entire backend. Direct Postgres connection. Drizzle ORM on top. No features you don't need, no 7-day pause, no conflict with your custom API.<br><br>
+    Locally: Docker Compose with the official postgres:16 image. Never develop against production DB.
+  </div>
+</div>
+</div>
+
+<!-- ═══════════ P2: SCHEMA ═══════════ -->
+<div class="panel" id="p2">
+<div class="wrap">
+  <div class="page-title">Complete Database Schema</div>
+  <div class="page-sub">Every table, every column, every index — for the omnilink registry</div>
+
+  <h2>Table overview — 8 tables total</h2>
+  <table>
+    <tr><th>Table</th><th>Purpose</th><th>Rows at scale</th></tr>
+    <tr><td>packages</td><td>One row per unique package name — the master registry</td><td>~15,000</td></tr>
+    <tr><td>versions</td><td>Every published version of every package</td><td>~80,000</td></tr>
+    <tr><td>quality_scores</td><td>Computed 0-100 score + breakdown per package</td><td>~15,000</td></tr>
+    <tr><td>targets</td><td>Which MCU variants each package/version supports</td><td>~120,000</td></tr>
+    <tr><td>memory_footprints</td><td>Flash + RAM measured per version per chip</td><td>~200,000</td></tr>
+    <tr><td>boards</td><td>Board definitions (ESP32-DevKitC, etc.)</td><td>~1,200</td></tr>
+    <tr><td>publishers</td><td>Verified publishers (companies, individuals)</td><td>~500</td></tr>
+    <tr><td>download_stats</td><td>Download counts per package per day</td><td>millions</td></tr>
+  </table>
+
+  <h2>001_packages.sql</h2>
+  <div class="schema-file">
+    <div class="sf-header">
+      <div class="sf-name"><div class="sf-dot" style="background:var(--amber)"></div>001_packages.sql</div>
+    </div>
+    <div class="sf-body">
+<span class="cm">-- Core package registry table</span>
+<span class="cm">-- One row per UNIQUE package name (not per version)</span>
+
+<span class="kw">CREATE TABLE</span> <span class="tb">packages</span> (
+  <span class="cn">id</span>              <span class="ty">UUID</span> <span class="kw">PRIMARY KEY DEFAULT</span> <span class="fn">gen_random_uuid</span>(),
+  <span class="cn">name</span>            <span class="ty">TEXT</span> <span class="kw">NOT NULL UNIQUE</span>,
+  <span class="cn">description</span>     <span class="ty">TEXT</span>,
+  <span class="cn">repository_url</span>  <span class="ty">TEXT</span>,          <span class="cm">-- github.com/user/repo</span>
+  <span class="cn">homepage_url</span>    <span class="ty">TEXT</span>,
+  <span class="cn">license</span>         <span class="ty">TEXT</span>,          <span class="cm">-- MIT, Apache-2.0, GPL-3.0</span>
+  <span class="cn">category</span>        <span class="ty">TEXT</span>,          <span class="cm">-- sensor, display, protocol, rtos, etc</span>
+
+  <span class="cm">-- Framework support flags</span>
+  <span class="cn">supports_arduino</span>      <span class="ty">BOOLEAN DEFAULT FALSE</span>,
+  <span class="cn">supports_espidf</span>       <span class="ty">BOOLEAN DEFAULT FALSE</span>,
+  <span class="cn">supports_micropython</span>  <span class="ty">BOOLEAN DEFAULT FALSE</span>,
+  <span class="cn">supports_stm32hal</span>     <span class="ty">BOOLEAN DEFAULT FALSE</span>,  <span class="cm">-- phase 2</span>
+  <span class="cn">supports_zephyr</span>       <span class="ty">BOOLEAN DEFAULT FALSE</span>,  <span class="cm">-- future</span>
+
+  <span class="cm">-- GitHub signals (updated by crawler)</span>
+  <span class="cn">github_stars</span>    <span class="ty">INTEGER DEFAULT 0</span>,
+  <span class="cn">github_forks</span>    <span class="ty">INTEGER DEFAULT 0</span>,
+  <span class="cn">open_issues</span>     <span class="ty">INTEGER DEFAULT 0</span>,
+  <span class="cn">closed_issues</span>   <span class="ty">INTEGER DEFAULT 0</span>,
+  <span class="cn">has_ci</span>          <span class="ty">BOOLEAN DEFAULT FALSE</span>,  <span class="cm">-- has .github/workflows/</span>
+  <span class="cn">has_readme</span>      <span class="ty">BOOLEAN DEFAULT FALSE</span>,
+  <span class="cn">has_examples</span>    <span class="ty">BOOLEAN DEFAULT FALSE</span>,  <span class="cm">-- has examples/ folder</span>
+  <span class="cn">has_tests</span>       <span class="ty">BOOLEAN DEFAULT FALSE</span>,
+  <span class="cn">last_commit_at</span>  <span class="ty">TIMESTAMPTZ</span>,
+
+  <span class="cm">-- Denormalized latest version (for fast listing)</span>
+  <span class="cn">latest_version</span>  <span class="ty">TEXT</span>,
+  <span class="cn">total_downloads</span> <span class="ty">BIGINT DEFAULT 0</span>,
+
+  <span class="cm">-- Publisher</span>
+  <span class="cn">publisher_id</span>    <span class="ty">UUID REFERENCES</span> <span class="tb">publishers</span>(<span class="cn">id</span>),
+  <span class="cn">is_official</span>     <span class="ty">BOOLEAN DEFAULT FALSE</span>,   <span class="cm">-- published by espressif, st, etc</span>
+  <span class="cn">is_verified</span>     <span class="ty">BOOLEAN DEFAULT FALSE</span>,   <span class="cm">-- domain-verified publisher</span>
+
+  <span class="cm">-- Full-text search vector (auto-updated)</span>
+  <span class="cn">search_vector</span>   <span class="ty">TSVECTOR</span>,
+
+  <span class="cm">-- Source tracking</span>
+  <span class="cn">source</span>          <span class="ty">TEXT DEFAULT</span> <span class="st">'github'</span>,  <span class="cm">-- github | manual | official</span>
+  <span class="cn">crawled_at</span>      <span class="ty">TIMESTAMPTZ</span>,
+
+  <span class="cn">created_at</span>  <span class="ty">TIMESTAMPTZ DEFAULT NOW</span>(),
+  <span class="cn">updated_at</span>  <span class="ty">TIMESTAMPTZ DEFAULT NOW</span>()
+);
+
+<span class="cm">-- Full-text search index (name + description weighted)</span>
+<span class="kw">CREATE INDEX</span> idx_packages_search
+  <span class="kw">ON</span> <span class="tb">packages</span> <span class="kw">USING GIN</span>(<span class="cn">search_vector</span>);
+
+<span class="cm">-- Auto-update search vector on insert/update</span>
+<span class="kw">CREATE OR REPLACE FUNCTION</span> <span class="fn">update_search_vector</span>() <span class="kw">RETURNS TRIGGER AS</span> $$
+<span class="kw">BEGIN</span>
+  <span class="kw">NEW</span>.<span class="cn">search_vector</span> :=
+    <span class="fn">setweight</span>(<span class="fn">to_tsvector</span>(<span class="st">'english'</span>, <span class="fn">coalesce</span>(<span class="kw">NEW</span>.<span class="cn">name</span>, <span class="st">''</span>)), <span class="st">'A'</span>) ||
+    <span class="fn">setweight</span>(<span class="fn">to_tsvector</span>(<span class="st">'english'</span>, <span class="fn">coalesce</span>(<span class="kw">NEW</span>.<span class="cn">description</span>, <span class="st">''</span>)), <span class="st">'B'</span>) ||
+    <span class="fn">setweight</span>(<span class="fn">to_tsvector</span>(<span class="st">'english'</span>, <span class="fn">coalesce</span>(<span class="kw">NEW</span>.<span class="cn">category</span>, <span class="st">''</span>)), <span class="st">'C'</span>);
+  <span class="kw">RETURN NEW</span>;
+<span class="kw">END</span>;
+$$ <span class="kw">LANGUAGE</span> plpgsql;
+
+<span class="kw">CREATE TRIGGER</span> packages_search_update
+  <span class="kw">BEFORE INSERT OR UPDATE ON</span> <span class="tb">packages</span>
+  <span class="kw">FOR EACH ROW EXECUTE FUNCTION</span> <span class="fn">update_search_vector</span>();
+
+<span class="cm">-- Common query indexes</span>
+<span class="kw">CREATE INDEX</span> idx_packages_category    <span class="kw">ON</span> <span class="tb">packages</span>(<span class="cn">category</span>);
+<span class="kw">CREATE INDEX</span> idx_packages_arduino     <span class="kw">ON</span> <span class="tb">packages</span>(<span class="cn">supports_arduino</span>) <span class="kw">WHERE</span> <span class="cn">supports_arduino</span> = <span class="kw">TRUE</span>;
+<span class="kw">CREATE INDEX</span> idx_packages_espidf      <span class="kw">ON</span> <span class="tb">packages</span>(<span class="cn">supports_espidf</span>) <span class="kw">WHERE</span> <span class="cn">supports_espidf</span> = <span class="kw">TRUE</span>;
+<span class="kw">CREATE INDEX</span> idx_packages_downloads   <span class="kw">ON</span> <span class="tb">packages</span>(<span class="cn">total_downloads</span> <span class="kw">DESC</span>);
+    </div>
+  </div>
+
+  <h2>002_versions.sql</h2>
+  <div class="schema-file">
+    <div class="sf-header">
+      <div class="sf-name"><div class="sf-dot" style="background:var(--blue)"></div>002_versions.sql</div>
+    </div>
+    <div class="sf-body">
+<span class="cm">-- Every published version of every package</span>
+<span class="kw">CREATE TABLE</span> <span class="tb">versions</span> (
+  <span class="cn">id</span>              <span class="ty">UUID</span> <span class="kw">PRIMARY KEY DEFAULT</span> <span class="fn">gen_random_uuid</span>(),
+  <span class="cn">package_id</span>      <span class="ty">UUID NOT NULL REFERENCES</span> <span class="tb">packages</span>(<span class="cn">id</span>) <span class="kw">ON DELETE CASCADE</span>,
+  <span class="cn">version</span>         <span class="ty">TEXT NOT NULL</span>,       <span class="cm">-- semver: "2.4.1"</span>
+  <span class="cn">tarball_url</span>     <span class="ty">TEXT</span>,               <span class="cm">-- R2 URL for source tarball</span>
+  <span class="cn">tarball_sha256</span>  <span class="ty">TEXT</span>,               <span class="cm">-- integrity hash</span>
+  <span class="cn">tarball_size_kb</span> <span class="ty">INTEGER</span>,
+
+  <span class="cm">-- Declared compatibility (from fuse.json)</span>
+  <span class="cn">frameworks</span>      <span class="ty">TEXT[]</span>,             <span class="cm">-- ['arduino', 'espidf']</span>
+  <span class="cn">targets</span>         <span class="ty">TEXT[]</span>,             <span class="cm">-- ['esp32', 'esp32s3', 'esp32c3']</span>
+  <span class="cn">idf_version_min</span> <span class="ty">TEXT</span>,               <span class="cm">-- ">=4.4.0"</span>
+  <span class="cn">peripherals</span>     <span class="ty">TEXT[]</span>,             <span class="cm">-- ['i2c', 'spi']</span>
+  <span class="cn">sensors</span>         <span class="ty">TEXT[]</span>,             <span class="cm">-- ['BME280', 'BMP280']</span>
+
+  <span class="cm">-- Dependencies (from fuse.json)</span>
+  <span class="cn">dependencies</span>    <span class="ty">JSONB DEFAULT</span> <span class="st">'{}'</span>,  <span class="cm">-- {"ArduinoJSON": "^7.0.0"}</span>
+
+  <span class="cm">-- Changelog for this version</span>
+  <span class="cn">changelog</span>       <span class="ty">TEXT</span>,
+  <span class="cn">published_at</span>    <span class="ty">TIMESTAMPTZ DEFAULT NOW</span>(),
+  <span class="cn">yanked</span>          <span class="ty">BOOLEAN DEFAULT FALSE</span>,  <span class="cm">-- marked bad, don't install</span>
+  <span class="cn">yanked_reason</span>   <span class="ty">TEXT</span>,
+
+  <span class="kw">UNIQUE</span>(<span class="cn">package_id</span>, <span class="cn">version</span>)
+);
+
+<span class="kw">CREATE INDEX</span> idx_versions_package  <span class="kw">ON</span> <span class="tb">versions</span>(<span class="cn">package_id</span>);
+<span class="kw">CREATE INDEX</span> idx_versions_targets  <span class="kw">ON</span> <span class="tb">versions</span> <span class="kw">USING GIN</span>(<span class="cn">targets</span>);
+<span class="kw">CREATE INDEX</span> idx_versions_frameworks <span class="kw">ON</span> <span class="tb">versions</span> <span class="kw">USING GIN</span>(<span class="cn">frameworks</span>);
+    </div>
+  </div>
+
+  <h2>003_quality_scores.sql</h2>
+  <div class="schema-file">
+    <div class="sf-header">
+      <div class="sf-name"><div class="sf-dot" style="background:var(--green)"></div>003_quality_scores.sql</div>
+    </div>
+    <div class="sf-body">
+<span class="cm">-- Quality score breakdown per package (your killer feature)</span>
+<span class="kw">CREATE TABLE</span> <span class="tb">quality_scores</span> (
+  <span class="cn">id</span>              <span class="ty">UUID</span> <span class="kw">PRIMARY KEY DEFAULT</span> <span class="fn">gen_random_uuid</span>(),
+  <span class="cn">package_id</span>      <span class="ty">UUID NOT NULL UNIQUE REFERENCES</span> <span class="tb">packages</span>(<span class="cn">id</span>) <span class="kw">ON DELETE CASCADE</span>,
+
+  <span class="cm">-- Total score 0-100</span>
+  <span class="cn">total</span>           <span class="ty">INTEGER NOT NULL DEFAULT 0</span>,
+
+  <span class="cm">-- Score breakdown (each component out of its max)</span>
+  <span class="cn">maintenance_score</span>   <span class="ty">INTEGER DEFAULT 0</span>,  <span class="cm">-- /20 based on last_commit age</span>
+  <span class="cn">ci_score</span>            <span class="ty">INTEGER DEFAULT 0</span>,  <span class="cm">-- /20 has GitHub Actions</span>
+  <span class="cn">docs_score</span>          <span class="ty">INTEGER DEFAULT 0</span>,  <span class="cm">-- /20 readme quality</span>
+  <span class="cn">popularity_score</span>    <span class="ty">INTEGER DEFAULT 0</span>,  <span class="cm">-- /20 stars + downloads</span>
+  <span class="cn">compatibility_score</span> <span class="ty">INTEGER DEFAULT 0</span>,  <span class="cm">-- /20 targets declared + tested</span>
+
+  <span class="cm">-- Human-readable breakdown for website</span>
+  <span class="cn">breakdown</span>       <span class="ty">JSONB DEFAULT</span> <span class="st">'{}'</span>,
+
+  <span class="cm">-- When was this computed</span>
+  <span class="cn">computed_at</span>     <span class="ty">TIMESTAMPTZ DEFAULT NOW</span>()
+);
+
+<span class="kw">CREATE INDEX</span> idx_quality_total <span class="kw">ON</span> <span class="tb">quality_scores</span>(<span class="cn">total</span> <span class="kw">DESC</span>);
+    </div>
+  </div>
+
+  <h2>004_memory_footprints.sql</h2>
+  <div class="schema-file">
+    <div class="sf-header">
+      <div class="sf-name"><div class="sf-dot" style="background:var(--purple)"></div>004_memory_footprints.sql</div>
+    </div>
+    <div class="sf-body">
+<span class="cm">-- Flash + RAM per version per chip (your second killer feature)</span>
+<span class="kw">CREATE TABLE</span> <span class="tb">memory_footprints</span> (
+  <span class="cn">id</span>          <span class="ty">UUID</span> <span class="kw">PRIMARY KEY DEFAULT</span> <span class="fn">gen_random_uuid</span>(),
+  <span class="cn">version_id</span>  <span class="ty">UUID NOT NULL REFERENCES</span> <span class="tb">versions</span>(<span class="cn">id</span>) <span class="kw">ON DELETE CASCADE</span>,
+  <span class="cn">chip</span>        <span class="ty">TEXT NOT NULL</span>,   <span class="cm">-- 'esp32s3', 'esp32c3', 'stm32f407' etc</span>
+  <span class="cn">framework</span>   <span class="ty">TEXT NOT NULL</span>,   <span class="cm">-- 'arduino' | 'espidf'</span>
+
+  <span class="cm">-- Measured from .map file after compile</span>
+  <span class="cn">flash_bytes</span> <span class="ty">INTEGER</span>,         <span class="cm">-- .text section size</span>
+  <span class="cn">ram_bytes</span>   <span class="ty">INTEGER</span>,         <span class="cm">-- .bss + .data section size</span>
+
+  <span class="cn">measured_at</span> <span class="ty">TIMESTAMPTZ DEFAULT NOW</span>(),
+  <span class="cn">method</span>      <span class="ty">TEXT DEFAULT</span> <span class="st">'qemu'</span>,  <span class="cm">-- 'qemu' | 'real_hardware' | 'declared'</span>
+
+  <span class="kw">UNIQUE</span>(<span class="cn">version_id</span>, <span class="cn">chip</span>, <span class="cn">framework</span>)
+);
+
+<span class="kw">CREATE INDEX</span> idx_memory_version <span class="kw">ON</span> <span class="tb">memory_footprints</span>(<span class="cn">version_id</span>);
+<span class="kw">CREATE INDEX</span> idx_memory_chip    <span class="kw">ON</span> <span class="tb">memory_footprints</span>(<span class="cn">chip</span>);
+    </div>
+  </div>
+
+  <h2>005_compat_matrix.sql</h2>
+  <div class="schema-file">
+    <div class="sf-header">
+      <div class="sf-name"><div class="sf-dot" style="background:var(--teal)"></div>005_compat_matrix.sql</div>
+    </div>
+    <div class="sf-body">
+<span class="cm">-- CI-tested hardware compatibility per version per chip</span>
+<span class="kw">CREATE TABLE</span> <span class="tb">compat_results</span> (
+  <span class="cn">id</span>          <span class="ty">UUID</span> <span class="kw">PRIMARY KEY DEFAULT</span> <span class="fn">gen_random_uuid</span>(),
+  <span class="cn">version_id</span>  <span class="ty">UUID NOT NULL REFERENCES</span> <span class="tb">versions</span>(<span class="cn">id</span>) <span class="kw">ON DELETE CASCADE</span>,
+  <span class="cn">chip</span>        <span class="ty">TEXT NOT NULL</span>,    <span class="cm">-- 'esp32s3'</span>
+  <span class="cn">framework</span>   <span class="ty">TEXT NOT NULL</span>,    <span class="cm">-- 'arduino' | 'espidf'</span>
+
+  <span class="cm">-- Test result</span>
+  <span class="cn">status</span>      <span class="ty">TEXT NOT NULL</span>,    <span class="cm">-- 'pass' | 'fail' | 'unknown'</span>
+  <span class="cn">tested_via</span>  <span class="ty">TEXT DEFAULT</span> <span class="st">'qemu'</span>,  <span class="cm">-- 'qemu' | 'real_hardware'</span>
+  <span class="cn">error_msg</span>   <span class="ty">TEXT</span>,             <span class="cm">-- if fail, what went wrong</span>
+  <span class="cn">tested_at</span>   <span class="ty">TIMESTAMPTZ DEFAULT NOW</span>(),
+
+  <span class="kw">UNIQUE</span>(<span class="cn">version_id</span>, <span class="cn">chip</span>, <span class="cn">framework</span>)
+);
+
+<span class="kw">CREATE INDEX</span> idx_compat_version <span class="kw">ON</span> <span class="tb">compat_results</span>(<span class="cn">version_id</span>);
+    </div>
+  </div>
+
+  <h2>006_publishers.sql + 007_boards.sql + 008_downloads.sql</h2>
+  <div class="schema-file">
+    <div class="sf-header">
+      <div class="sf-name"><div class="sf-dot" style="background:var(--red)"></div>006_008_supporting_tables.sql</div>
+    </div>
+    <div class="sf-body">
+<span class="cm">-- Verified publishers (companies, individual devs)</span>
+<span class="kw">CREATE TABLE</span> <span class="tb">publishers</span> (
+  <span class="cn">id</span>            <span class="ty">UUID</span> <span class="kw">PRIMARY KEY DEFAULT</span> <span class="fn">gen_random_uuid</span>(),
+  <span class="cn">name</span>          <span class="ty">TEXT NOT NULL</span>,
+  <span class="cn">domain</span>        <span class="ty">TEXT UNIQUE</span>,          <span class="cm">-- espressif.com, st.com</span>
+  <span class="cn">github_org</span>    <span class="ty">TEXT</span>,
+  <span class="cn">is_verified</span>   <span class="ty">BOOLEAN DEFAULT FALSE</span>,
+  <span class="cn">publish_token</span> <span class="ty">TEXT UNIQUE</span>,           <span class="cm">-- hashed API token for publishing</span>
+  <span class="cn">created_at</span>    <span class="ty">TIMESTAMPTZ DEFAULT NOW</span>()
+);
+
+<span class="cm">-- Board definitions (the hardware your users target)</span>
+<span class="kw">CREATE TABLE</span> <span class="tb">boards</span> (
+  <span class="cn">id</span>            <span class="ty">UUID</span> <span class="kw">PRIMARY KEY DEFAULT</span> <span class="fn">gen_random_uuid</span>(),
+  <span class="cn">name</span>          <span class="ty">TEXT NOT NULL UNIQUE</span>,  <span class="cm">-- 'esp32-devkitc-v4'</span>
+  <span class="cn">display_name</span>  <span class="ty">TEXT NOT NULL</span>,
+  <span class="cn">chip</span>          <span class="ty">TEXT NOT NULL</span>,          <span class="cm">-- 'esp32s3'</span>
+  <span class="cn">flash_kb</span>      <span class="ty">INTEGER NOT NULL</span>,       <span class="cm">-- 4096</span>
+  <span class="cn">ram_kb</span>        <span class="ty">INTEGER NOT NULL</span>,       <span class="cm">-- 520</span>
+  <span class="cn">vendor</span>        <span class="ty">TEXT</span>,                   <span class="cm">-- 'espressif', 'm5stack'</span>
+  <span class="cn">metadata</span>      <span class="ty">JSONB DEFAULT</span> <span class="st">'{}'</span>,    <span class="cm">-- pins, features, etc</span>
+  <span class="cn">created_at</span>    <span class="ty">TIMESTAMPTZ DEFAULT NOW</span>()
+);
+
+<span class="cm">-- Daily download counts (time-series, append-only)</span>
+<span class="kw">CREATE TABLE</span> <span class="tb">download_stats</span> (
+  <span class="cn">id</span>          <span class="ty">UUID</span> <span class="kw">PRIMARY KEY DEFAULT</span> <span class="fn">gen_random_uuid</span>(),
+  <span class="cn">package_id</span>  <span class="ty">UUID NOT NULL REFERENCES</span> <span class="tb">packages</span>(<span class="cn">id</span>) <span class="kw">ON DELETE CASCADE</span>,
+  <span class="cn">version</span>     <span class="ty">TEXT NOT NULL</span>,
+  <span class="cn">date</span>        <span class="ty">DATE NOT NULL</span>,
+  <span class="cn">count</span>       <span class="ty">BIGINT DEFAULT 0</span>,
+  <span class="kw">UNIQUE</span>(<span class="cn">package_id</span>, <span class="cn">version</span>, <span class="cn">date</span>)
+);
+
+<span class="cm">-- Increment efficiently (upsert pattern)</span>
+<span class="cm">-- INSERT INTO download_stats (package_id, version, date, count)</span>
+<span class="cm">-- VALUES ($1, $2, CURRENT_DATE, 1)</span>
+<span class="cm">-- ON CONFLICT (package_id, version, date) DO UPDATE</span>
+<span class="cm">-- SET count = download_stats.count + 1;</span>
+
+<span class="kw">CREATE INDEX</span> idx_downloads_package <span class="kw">ON</span> <span class="tb">download_stats</span>(<span class="cn">package_id</span>, <span class="cn">date</span> <span class="kw">DESC</span>);
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════ P3: LOCAL SETUP ═══════════ -->
+<div class="panel" id="p3">
+<div class="wrap">
+  <div class="page-title">Local Development Setup</div>
+  <div class="page-sub">Run the full stack on your machine before touching production</div>
+
+  <h2>docker-compose.yml — start here</h2>
+  <div class="schema-file">
+    <div class="sf-header">
+      <div class="sf-name"><div class="sf-dot" style="background:var(--blue)"></div>docker-compose.yml (repo root)</div>
+    </div>
+    <div class="sf-body">
+<span class="kw">version</span>: <span class="st">'3.9'</span>
+
+<span class="kw">services</span>:
+  <span class="tb">postgres</span>:
+    <span class="kw">image</span>: postgres:16-alpine
+    <span class="kw">ports</span>:
+      - <span class="st">"5432:5432"</span>
+    <span class="kw">environment</span>:
+      POSTGRES_USER: omnilink
+      POSTGRES_PASSWORD: omnilink_dev
+      POSTGRES_DB: omnilink_db
+    <span class="kw">volumes</span>:
+      - postgres_data:/var/lib/postgresql/data
+      - ./apps/api/src/db/migrations:/docker-entrypoint-initdb.d  <span class="cm"># runs on first start</span>
+    <span class="kw">healthcheck</span>:
+      <span class="kw">test</span>: [<span class="st">"CMD-SHELL"</span>, <span class="st">"pg_isready -U omnilink"</span>]
+      <span class="kw">interval</span>: 5s
+      <span class="kw">timeout</span>: 5s
+      <span class="kw">retries</span>: 5
+
+  <span class="tb">redis</span>:
+    <span class="kw">image</span>: redis:7-alpine
+    <span class="kw">ports</span>:
+      - <span class="st">"6379:6379"</span>
+
+<span class="kw">volumes</span>:
+  postgres_data:
+    </div>
+  </div>
+
+  <h2>Step-by-step local setup</h2>
+  <div class="step-wrap">
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--gdim);color:var(--green);border:1px solid var(--green)">01</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Clone and install dependencies</div>
+        <div class="s-sub">Get the monorepo running. pnpm handles all workspaces.</div>
+        <div class="cmd">
+          <div><span class="cg">git clone</span> https://github.com/[you]/omnilink</div>
+          <div><span class="cg">cd</span> omnilink</div>
+          <div><span class="cg">pnpm install</span> <span class="cc"># installs all workspaces</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--gdim);color:var(--green);border:1px solid var(--green)">02</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Start Postgres + Redis locally</div>
+        <div class="s-sub">Docker Compose spins up the database. First run auto-executes migrations in initdb.d/</div>
+        <div class="cmd">
+          <div><span class="cg">docker compose up -d</span>    <span class="cc"># starts postgres + redis in background</span></div>
+          <div><span class="cg">docker compose ps</span>        <span class="cc"># verify both are healthy</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--gdim);color:var(--green);border:1px solid var(--green)">03</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Set up environment variables</div>
+        <div class="s-sub">Copy the example env file. Never commit .env</div>
+        <div class="cmd">
+          <div><span class="cg">cp</span> apps/api/.env.example apps/api/.env</div>
+          <div><span class="cc"># .env contents:</span></div>
+          <div>DATABASE_URL=postgresql://omnilink:omnilink_dev@localhost:5432/omnilink_db</div>
+          <div>REDIS_URL=redis://localhost:6379</div>
+          <div>GITHUB_TOKEN=ghp_your_token_here  <span class="cc"># for crawler rate limits</span></div>
+          <div>R2_BUCKET=omnilink-packages        <span class="cc"># Cloudflare R2</span></div>
+          <div>R2_ACCESS_KEY=your_key</div>
+          <div>R2_SECRET_KEY=your_secret</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--gdim);color:var(--green);border:1px solid var(--green)">04</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Run database migrations</div>
+        <div class="s-sub">Drizzle applies all SQL migration files in order</div>
+        <div class="cmd">
+          <div><span class="cg">cd</span> apps/api</div>
+          <div><span class="cg">bun run db:migrate</span>  <span class="cc"># runs: drizzle-kit push</span></div>
+          <div><span class="cc"># OR for explicit migration files:</span></div>
+          <div><span class="cg">bun run db:generate</span> <span class="cc"># generates SQL from schema.ts</span></div>
+          <div><span class="cg">bun run db:push</span>     <span class="cc"># applies to local postgres</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--gdim);color:var(--green);border:1px solid var(--green)">05</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Seed with test data</div>
+        <div class="s-sub">Insert 50 real ESP32 packages to develop against — don't run the full crawler locally</div>
+        <div class="cmd">
+          <div><span class="cg">bun run db:seed</span>     <span class="cc"># inserts sample packages, boards, scores</span></div>
+          <div><span class="cc"># seeds: 50 packages, 200 versions, board definitions</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--gdim);color:var(--green);border:1px solid var(--green)">06</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Start the development servers</div>
+        <div class="s-sub">Turborepo starts all apps simultaneously with hot reload</div>
+        <div class="cmd">
+          <div><span class="cg">pnpm dev</span>            <span class="cc"># from repo root — starts everything</span></div>
+          <div><span class="cc"># API:     http://localhost:3001</span></div>
+          <div><span class="cc"># Website: http://localhost:3000</span></div>
+          <div><span class="cc"># DB:      postgresql://localhost:5432/omnilink_db</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ═══════════ P4: PRODUCTION ═══════════ -->
+<div class="panel" id="p4">
+<div class="wrap">
+  <div class="page-title">Production Setup — Railway</div>
+  <div class="page-sub">Deploy everything to Railway in under 30 minutes</div>
+
+  <div class="step-wrap">
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--bdim);color:var(--blue);border:1px solid var(--blue)">01</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Create Railway project</div>
+        <div class="s-sub">One Railway project holds your entire backend</div>
+        <div class="cmd">
+          <div><span class="cc"># Go to railway.app → New Project → Empty Project</span></div>
+          <div><span class="cc"># Name it: omnilink-backend</span></div>
+          <div><span class="cc"># You'll add 4 services: postgres, redis, api, crawler</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--bdim);color:var(--blue);border:1px solid var(--blue)">02</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Add PostgreSQL service</div>
+        <div class="s-sub">Railway provisions Postgres 16 with one click. Automatic backups on Pro.</div>
+        <div class="cmd">
+          <div><span class="cc"># Railway Dashboard → Add Service → Database → PostgreSQL</span></div>
+          <div><span class="cc"># Railway auto-sets DATABASE_URL env var for all services</span></div>
+          <div><span class="cc"># Connect from local for first migration:</span></div>
+          <div><span class="cg">railway run bun run db:migrate</span>  <span class="cc"># uses Railway's DATABASE_URL</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--bdim);color:var(--blue);border:1px solid var(--blue)">03</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Add Redis service</div>
+        <div class="s-sub">For rate limiting the API and caching hot package metadata</div>
+        <div class="cmd">
+          <div><span class="cc"># Railway Dashboard → Add Service → Database → Redis</span></div>
+          <div><span class="cc"># Railway auto-sets REDIS_URL env var</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--bdim);color:var(--blue);border:1px solid var(--blue)">04</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Deploy the API</div>
+        <div class="s-sub">Connect your GitHub repo. Railway auto-deploys on every push to main.</div>
+        <div class="cmd">
+          <div><span class="cc"># Railway → Add Service → GitHub Repo</span></div>
+          <div><span class="cc"># Root directory: apps/api</span></div>
+          <div><span class="cc"># Build command: bun install && bun run build</span></div>
+          <div><span class="cc"># Start command: bun run start</span></div>
+          <div><span class="cc"># Railway gives you: api.omnilink.railway.app</span></div>
+          <div><span class="cc"># Point registry.forgepm.dev → this Railway URL</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--bdim);color:var(--blue);border:1px solid var(--blue)">05</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Deploy the Python crawler</div>
+        <div class="s-sub">Runs every 6 hours as a cron job on Railway</div>
+        <div class="cmd">
+          <div><span class="cc"># Railway → Add Service → GitHub Repo</span></div>
+          <div><span class="cc"># Root directory: apps/crawler</span></div>
+          <div><span class="cc"># Build: pip install -r requirements.txt</span></div>
+          <div><span class="cc"># Start: python main.py</span></div>
+          <div><span class="cc"># Set CRON_SCHEDULE: 0 */6 * * *  (every 6h)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="sl"><div class="snum" style="background:var(--bdim);color:var(--blue);border:1px solid var(--blue)">06</div><div class="sline"></div></div>
+      <div class="sr">
+        <div class="s-title">Cost at v1 scale</div>
+        <div class="s-sub">What you'll actually pay on Railway Hobby</div>
+        <div class="cmd">
+          <div><span class="cc"># Railway Hobby plan: $5/month included credits</span></div>
+          <div><span class="cc"># PostgreSQL (512MB RAM):    ~$2/month</span></div>
+          <div><span class="cc"># Redis (256MB):             ~$1/month</span></div>
+          <div><span class="cc"># API (512MB RAM):           ~$2/month</span></div>
+          <div><span class="cc"># Crawler (256MB, cron):     ~$0.50/month</span></div>
+          <div><span class="cc"># Total:                     ~$5-6/month ← fits hobby tier</span></div>
+          <div><span class="cc"># Vercel (website):          FREE</span></div>
+          <div><span class="cc"># Cloudflare R2:             FREE (up to 10GB)</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ═══════════ P5: DRIZZLE ORM ═══════════ -->
+<div class="panel" id="p5">
+<div class="wrap">
+  <div class="page-title">Drizzle ORM — TypeScript Schema</div>
+  <div class="page-sub">Type-safe database access from your Hono API. Write once, use everywhere.</div>
+
+  <h2>Why Drizzle over Prisma</h2>
+  <table>
+    <tr><th>Feature</th><th>Drizzle</th><th>Prisma</th></tr>
+    <tr><td>Bundle size</td><td class="g">~35KB</td><td class="r">~10MB (generates client)</td></tr>
+    <tr><td>Works with Bun</td><td class="g">✓ Native</td><td class="a">~ Works but slower</td></tr>
+    <tr><td>SQL control</td><td class="g">Full — writes SQL you'd write</td><td class="a">Abstracts too much</td></tr>
+    <tr><td>Migrations</td><td class="g">drizzle-kit generates SQL files</td><td class="a">Generates its own format</td></tr>
+    <tr><td>TypeScript types</td><td class="g">Inferred from schema directly</td><td class="g">Also good</td></tr>
+    <tr><td>Performance</td><td class="g">Near-native SQL speed</td><td class="a">Extra abstraction layer</td></tr>
+    <tr><td>Learning curve</td><td class="g">Low — looks like SQL</td><td class="a">Medium — custom DSL</td></tr>
+  </table>
+
+  <h2>apps/api/src/db/schema.ts</h2>
+  <div class="schema-file">
+    <div class="sf-header">
+      <div class="sf-name"><div class="sf-dot" style="background:var(--green)"></div>schema.ts — the TypeScript equivalent of all SQL files</div>
+    </div>
+    <div class="sf-body">
+<span class="kw">import</span> {
+  pgTable, uuid, text, boolean, integer,
+  bigint, timestamp, jsonb, date, unique
+} <span class="kw">from</span> <span class="st">'drizzle-orm/pg-core'</span>
+<span class="kw">import</span> { relations } <span class="kw">from</span> <span class="st">'drizzle-orm'</span>
+
+<span class="cm">// ── packages ──────────────────────────────────</span>
+<span class="kw">export const</span> <span class="tb">packages</span> = <span class="fn">pgTable</span>(<span class="st">'packages'</span>, {
+  <span class="cn">id</span>:              uuid(<span class="st">'id'</span>).primaryKey().defaultRandom(),
+  <span class="cn">name</span>:            text(<span class="st">'name'</span>).notNull().unique(),
+  <span class="cn">description</span>:     text(<span class="st">'description'</span>),
+  <span class="cn">repositoryUrl</span>:   text(<span class="st">'repository_url'</span>),
+  <span class="cn">license</span>:         text(<span class="st">'license'</span>),
+  <span class="cn">category</span>:        text(<span class="st">'category'</span>),
+
+  <span class="cn">supportsArduino</span>:     boolean(<span class="st">'supports_arduino'</span>).default(<span class="kw">false</span>),
+  <span class="cn">supportsEspidf</span>:      boolean(<span class="st">'supports_espidf'</span>).default(<span class="kw">false</span>),
+  <span class="cn">supportsMicropython</span>: boolean(<span class="st">'supports_micropython'</span>).default(<span class="kw">false</span>),
+
+  <span class="cn">githubStars</span>:   integer(<span class="st">'github_stars'</span>).default(0),
+  <span class="cn">openIssues</span>:    integer(<span class="st">'open_issues'</span>).default(0),
+  <span class="cn">hasCI</span>:         boolean(<span class="st">'has_ci'</span>).default(<span class="kw">false</span>),
+  <span class="cn">hasReadme</span>:     boolean(<span class="st">'has_readme'</span>).default(<span class="kw">false</span>),
+  <span class="cn">hasExamples</span>:   boolean(<span class="st">'has_examples'</span>).default(<span class="kw">false</span>),
+  <span class="cn">lastCommitAt</span>:  timestamp(<span class="st">'last_commit_at'</span>, { withTimezone: <span class="kw">true</span> }),
+  <span class="cn">latestVersion</span>: text(<span class="st">'latest_version'</span>),
+  <span class="cn">totalDownloads</span>:bigint(<span class="st">'total_downloads'</span>, { mode: <span class="st">'number'</span> }).default(0),
+  <span class="cn">isOfficial</span>:    boolean(<span class="st">'is_official'</span>).default(<span class="kw">false</span>),
+
+  <span class="cn">createdAt</span>: timestamp(<span class="st">'created_at'</span>, { withTimezone: <span class="kw">true</span> }).defaultNow(),
+  <span class="cn">updatedAt</span>: timestamp(<span class="st">'updated_at'</span>, { withTimezone: <span class="kw">true</span> }).defaultNow(),
+})
+
+<span class="cm">// ── versions ──────────────────────────────────</span>
+<span class="kw">export const</span> <span class="tb">versions</span> = <span class="fn">pgTable</span>(<span class="st">'versions'</span>, {
+  <span class="cn">id</span>:           uuid(<span class="st">'id'</span>).primaryKey().defaultRandom(),
+  <span class="cn">packageId</span>:    uuid(<span class="st">'package_id'</span>).notNull().references(() => <span class="tb">packages</span>.id),
+  <span class="cn">version</span>:      text(<span class="st">'version'</span>).notNull(),
+  <span class="cn">tarballUrl</span>:   text(<span class="st">'tarball_url'</span>),
+  <span class="cn">tarballSha256</span>:text(<span class="st">'tarball_sha256'</span>),
+  <span class="cn">frameworks</span>:   text(<span class="st">'frameworks'</span>).array(),
+  <span class="cn">targets</span>:      text(<span class="st">'targets'</span>).array(),
+  <span class="cn">dependencies</span>: jsonb(<span class="st">'dependencies'</span>).default({}),
+  <span class="cn">changelog</span>:    text(<span class="st">'changelog'</span>),
+  <span class="cn">yanked</span>:       boolean(<span class="st">'yanked'</span>).default(<span class="kw">false</span>),
+  <span class="cn">publishedAt</span>:  timestamp(<span class="st">'published_at'</span>, { withTimezone: <span class="kw">true</span> }).defaultNow(),
+}, (t) => ({
+  <span class="cn">uniq</span>: unique().on(t.packageId, t.version)
+}))
+
+<span class="cm">// ── quality_scores ────────────────────────────</span>
+<span class="kw">export const</span> <span class="tb">qualityScores</span> = <span class="fn">pgTable</span>(<span class="st">'quality_scores'</span>, {
+  <span class="cn">id</span>:                  uuid(<span class="st">'id'</span>).primaryKey().defaultRandom(),
+  <span class="cn">packageId</span>:           uuid(<span class="st">'package_id'</span>).notNull().unique().references(() => <span class="tb">packages</span>.id),
+  <span class="cn">total</span>:               integer(<span class="st">'total'</span>).notNull().default(0),
+  <span class="cn">maintenanceScore</span>:    integer(<span class="st">'maintenance_score'</span>).default(0),
+  <span class="cn">ciScore</span>:             integer(<span class="st">'ci_score'</span>).default(0),
+  <span class="cn">docsScore</span>:           integer(<span class="st">'docs_score'</span>).default(0),
+  <span class="cn">popularityScore</span>:     integer(<span class="st">'popularity_score'</span>).default(0),
+  <span class="cn">compatibilityScore</span>:  integer(<span class="st">'compatibility_score'</span>).default(0),
+  <span class="cn">breakdown</span>:           jsonb(<span class="st">'breakdown'</span>).default({}),
+  <span class="cn">computedAt</span>:          timestamp(<span class="st">'computed_at'</span>, { withTimezone: <span class="kw">true</span> }).defaultNow(),
+})
+
+<span class="cm">// ── TypeScript types (auto-inferred) ──────────</span>
+<span class="kw">export type</span> <span class="ty">Package</span>      = <span class="kw">typeof</span> <span class="tb">packages</span>.$inferSelect
+<span class="kw">export type</span> <span class="ty">NewPackage</span>   = <span class="kw">typeof</span> <span class="tb">packages</span>.$inferInsert
+<span class="kw">export type</span> <span class="ty">Version</span>      = <span class="kw">typeof</span> <span class="tb">versions</span>.$inferSelect
+<span class="kw">export type</span> <span class="ty">QualityScore</span> = <span class="kw">typeof</span> <span class="tb">qualityScores</span>.$inferSelect
+
+<span class="cm">// ── db connection (apps/api/src/db/index.ts) ──</span>
+<span class="kw">import</span> { drizzle } <span class="kw">from</span> <span class="st">'drizzle-orm/postgres-js'</span>
+<span class="kw">import</span> postgres <span class="kw">from</span> <span class="st">'postgres'</span>
+<span class="kw">import</span> * <span class="kw">as</span> schema <span class="kw">from</span> <span class="st">'./schema'</span>
+
+<span class="kw">const</span> client = <span class="fn">postgres</span>(process.env.DATABASE_URL!)
+<span class="kw">export const</span> db = <span class="fn">drizzle</span>(client, { schema })
+    </div>
+  </div>
+
+  <h2>Example queries your API will run</h2>
+  <div class="schema-file">
+    <div class="sf-header">
+      <div class="sf-name"><div class="sf-dot" style="background:var(--blue)"></div>apps/api/src/routes/packages.ts — example queries</div>
+    </div>
+    <div class="sf-body">
+<span class="kw">import</span> { db } <span class="kw">from</span> <span class="st">'../db'</span>
+<span class="kw">import</span> { packages, qualityScores, versions } <span class="kw">from</span> <span class="st">'../db/schema'</span>
+<span class="kw">import</span> { eq, desc, ilike, and, sql } <span class="kw">from</span> <span class="st">'drizzle-orm'</span>
+
+<span class="cm">// GET /packages — list with quality score, sorted</span>
+<span class="kw">const</span> list = <span class="kw">await</span> db
+  .select({
+    ...packages,
+    qualityTotal: qualityScores.total,
+  })
+  .from(packages)
+  .leftJoin(qualityScores, eq(packages.id, qualityScores.packageId))
+  .orderBy(desc(qualityScores.total))
+  .limit(20).offset(0)
+
+<span class="cm">// GET /search?q=bme280&framework=arduino</span>
+<span class="kw">const</span> results = <span class="kw">await</span> db
+  .select()
+  .from(packages)
+  .where(
+    and(
+      sql`search_vector @@ plainto_tsquery('english', ${query})`,
+      eq(packages.supportsArduino, <span class="kw">true</span>)
+    )
+  )
+  .orderBy(sql`ts_rank(search_vector, plainto_tsquery('english', ${query})) DESC`)
+  .limit(10)
+
+<span class="cm">// GET /packages/:name — full detail</span>
+<span class="kw">const</span> pkg = <span class="kw">await</span> db.query.packages.findFirst({
+  where: eq(packages.name, name),
+  with: {
+    versions: { orderBy: desc(versions.publishedAt), limit: 10 },
+    qualityScore: <span class="kw">true</span>,
+  }
+})
+    </div>
+  </div>
+
+  <div class="tip"><strong>package.json scripts to add in apps/api:</strong><br>
+  <span style="font-family:var(--mono);font-size:11px;color:var(--green)">"db:generate": "drizzle-kit generate"</span> — generates SQL migration files from schema changes<br>
+  <span style="font-family:var(--mono);font-size:11px;color:var(--green)">"db:migrate": "drizzle-kit migrate"</span> — applies migrations to database<br>
+  <span style="font-family:var(--mono);font-size:11px;color:var(--green)">"db:push": "drizzle-kit push"</span> — for local dev: pushes schema directly without migration files<br>
+  <span style="font-family:var(--mono);font-size:11px;color:var(--green)">"db:studio": "drizzle-kit studio"</span> — opens a local GUI to browse your database
+  </div>
+</div>
+</div>
+
+<script>
+function show(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+  document.querySelectorAll('.ntab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+}
+</script>
+</body>
+</html>

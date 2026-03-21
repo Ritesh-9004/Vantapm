@@ -1,0 +1,50 @@
+# ── Dependencies ───────────────────────────────────────────
+node_modules/
+
+# ── Build outputs ─────────────────────────────────────────
+dist/
+build/
+.next/
+out/
+
+# ── Packman managed folders (in user projects) ───────────
+.packman/
+
+# ── Environment variables (contain secrets) ───────────────
+.env
+.env.local
+.env.*.local
+# Keep .env.example files tracked (safe templates)
+!.env.example
+
+# ── IDE ───────────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ── OS ────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# ── Turbo ─────────────────────────────────────────────────
+.turbo/
+
+# ── Python ────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.eggs/
+
+# ── Rust ──────────────────────────────────────────────────
+target/
+
+# ── Misc ──────────────────────────────────────────────────
+*.log
+*.tsbuildinfo
+
+# ── Sensitive docs (token screenshots, etc.) ──────────────
+docs/*.pdf

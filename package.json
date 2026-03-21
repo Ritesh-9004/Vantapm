@@ -1,0 +1,24 @@
+{
+  "name": "packman",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Universal MCU package manager and registry — find, install, and publish firmware libraries for any microcontroller",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:generate": "turbo run db:generate --filter=@packman/api",
+    "db:migrate": "turbo run db:migrate --filter=@packman/api",
+    "db:push": "turbo run db:push --filter=@packman/api",
+    "db:studio": "turbo run db:studio --filter=@packman/api"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.0"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
