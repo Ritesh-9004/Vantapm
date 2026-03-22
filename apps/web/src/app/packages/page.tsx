@@ -1,6 +1,7 @@
 import { SearchBar } from "@/components/SearchBar";
 import { FeaturedPackages } from "@/components/FeaturedPackages";
 import Link from "next/link";
+import { Suspense } from "react";
 
 export default function PackagesPage() {
   const categories = ["all", "sensor", "display", "communication", "iot", "motor", "audio", "ai", "security", "power", "filesystem", "protocol", "storage", "utility"];
@@ -117,7 +118,15 @@ export default function PackagesPage() {
         </aside>
 
         <section>
-          <FeaturedPackages limit={30} layout="list" />
+          <Suspense
+            fallback={
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 text-sm text-[var(--color-text-muted)]">
+                Loading packages...
+              </div>
+            }
+          >
+            <FeaturedPackages limit={30} layout="list" />
+          </Suspense>
         </section>
       </div>
     </div>

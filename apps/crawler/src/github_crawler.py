@@ -95,6 +95,12 @@ class RawRepo:
 
 
 def _repo_to_raw(repo: Repository) -> RawRepo:
+    topics: list[str] = []
+    try:
+        topics = repo.get_topics()
+    except Exception as exc:
+        logger.debug("Topic fetch failed for %s: %s", repo.full_name, exc)
+
     return RawRepo(
         full_name=repo.full_name,
         name=repo.name,
@@ -106,7 +112,7 @@ def _repo_to_raw(repo: Repository) -> RawRepo:
         open_issues=repo.open_issues_count,
         license=repo.license.spdx_id if repo.license else None,
         language=repo.language,
-        topics=repo.get_topics(),
+        topics=topics,
         default_branch=repo.default_branch,
         created_at=repo.created_at,
         updated_at=repo.updated_at,
@@ -170,8 +176,14 @@ def discover_repos() -> list[RawRepo]:
                         break
                     if repo.full_name in seen or repo.archived:
                         continue
+                    try:
+                        raw_repo = _repo_to_raw(repo)
+                    except Exception as exc:
+                        logger.warning("Skipping repo %s due to conversion error: %s", repo.full_name, exc)
+                        continue
+
                     seen.add(repo.full_name)
-                    results.append(_repo_to_raw(repo))
+                    results.append(raw_repo)
                     count += 1
                     if count >= per_query_limit:
                         break

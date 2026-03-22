@@ -2,6 +2,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { PlatformGrid } from "@/components/PlatformGrid";
 import { FeaturedPackages } from "@/components/FeaturedPackages";
 import { StatsBar } from "@/components/StatsBar";
+import { Suspense } from "react";
 
 export default function HomePage() {
   return (
@@ -48,7 +49,15 @@ export default function HomePage() {
         <h2 className="mb-6 font-[family-name:var(--font-syne)] text-2xl font-semibold">
           Top Rated Packages
         </h2>
-        <FeaturedPackages />
+        <Suspense
+          fallback={
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4 text-sm text-[var(--color-text-muted)]">
+              Loading packages...
+            </div>
+          }
+        >
+          <FeaturedPackages />
+        </Suspense>
       </section>
 
       {/* ── How It Works ─────────────────────────────────── */}
