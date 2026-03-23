@@ -1,7 +1,6 @@
 <div align="center">
-  <h1>📦 VantaPM</h1>
-  <p><strong>Universal MCU Package Manager & Registry</strong></p>
-<p>Manage, publish, and discover libraries for microcontrollers (MCUs) — ESP32, STM32, Arduino, and more.</p>
+  <h1>📦 VantaPM - Universal MCU Package Manager & Registry</h1>
+
 
  <!-- Tech stack -->
 <img alt="Version" src="https://img.shields.io/badge/version-0.2.0-blue?style=for-the-badge" />
@@ -27,11 +26,13 @@
 <a href="https://vantapm.onrender.com/health">
   <img alt="API" src="https://img.shields.io/badge/API-live-brightgreen?style=for-the-badge&logo=render&logoColor=white" />
 </a>
+
 </div>
 
 
 ---
-
+### Manage, publish, and discover libraries for microcontrollers (MCUs) — ESP32, STM32, Arduino, and more.
+---
 ## Getting Started
 
 - **End users (recommended):** Download the prebuilt CLI binary from [GitHub Releases](https://github.com/Ritesh-9004/Vantapm/releases). No Node.js, Bun, Docker, or repo clone required.
