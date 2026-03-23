@@ -1,14 +1,17 @@
 # 📦 Vanta
 
-**Universal MCU Package Manager & Registry**
+<div align="center">
+	<strong>Universal MCU Package Manager & Registry</strong>
+	<br />
+	<br />
+	<img alt="License" src="https://img.shields.io/badge/license-MIT-blue" />
+	<img alt="Node" src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" />
+	<img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" />
+</div>
 
 Find, install, and publish firmware libraries for any microcontroller — ESP32, STM32, RP2040, nRF52, and more.
 
 Like [pub.dev](https://pub.dev) (discovery) + [npm](https://www.npmjs.com) (workflow) — but purpose-built for embedded firmware.
-
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
-![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 
 ---
 
@@ -56,7 +59,7 @@ vanta/
 ### 1. Clone & install
 
 ```bash
-git clone https://github.com/Ritesh-9004/Vanta.git
+git clone https://github.com/Ritesh-9004/Vantapm.git
 cd vanta
 pnpm install
 ```
