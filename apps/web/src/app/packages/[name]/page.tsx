@@ -3,9 +3,62 @@ import { MemoryWidget } from "@/components/MemoryWidget";
 import { QualityBreakdown } from "@/components/QualityBreakdown";
 import { VersionList } from "@/components/VersionList";
 import { CompatMatrix } from "@/components/CompatMatrix";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vantapm.vercel.app";
+const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+async function getPackage(name: string) {
+  const res = await fetch(`${apiBase}/packages/${name}`, {
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    return null;
+  }
+
+  return res.json();
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ name: string }>;
+}): Promise<Metadata> {
+  const { name } = await params;
+  const pkg = await getPackage(name);
+
+  if (!pkg) {
+    return {
+      title: "Package not found",
+    };
+  }
+
+  const title = `${pkg.display_name || pkg.name} for ${Array.isArray(pkg.platforms) && pkg.platforms.length > 0 ? pkg.platforms.join(", ") : "embedded systems"}`;
+  const description = pkg.description || `Explore ${pkg.name} on VantaPM.`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/packages/${pkg.name}`,
+    },
+    openGraph: {
+      title: `${pkg.display_name || pkg.name} | VantaPM`,
+      description,
+      type: "article",
+      url: `${siteUrl}/packages/${pkg.name}`,
+    },
+    twitter: {
+      card: "summary",
+      title: `${pkg.display_name || pkg.name} | VantaPM`,
+      description,
+    },
+  };
+}
 
 export default async function PackageDetailPage({
   params,
@@ -13,17 +66,13 @@ export default async function PackageDetailPage({
   params: Promise<{ name: string }>;
 }) {
   const { name } = await params;
-  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
   let pkg;
   try {
-    const res = await fetch(`${api}/packages/${name}`, {
-      cache: "no-store",
-    });
-    if (!res.ok) {
+    pkg = await getPackage(name);
+    if (!pkg) {
       notFound();
     }
-    pkg = await res.json();
   } catch (error) {
     console.error(`Failed to fetch package ${name}:`, error);
     notFound();

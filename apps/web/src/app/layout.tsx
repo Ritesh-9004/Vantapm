@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Inter, Syne } from "next/font/google";
 import "./globals.css";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vantapm.vercel.app";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -22,13 +24,19 @@ const syne = Syne({
 });
 
 export const metadata: Metadata = {
-  title: "Vanta — Universal MCU Package Registry",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "VantaPM — Universal MCU Package Manager & Registry",
+    template: "%s | VantaPM",
+  },
   description:
-    "Discover, compare, and install firmware libraries for ESP32, STM32, RP2040, nRF52, AVR and more. Quality scores, memory maps, and compatibility at a glance.",
+    "Discover, compare, and install firmware libraries for ESP32, STM32, RP2040, nRF52, AVR, and more. Explore quality scores, compatibility, versions, and package metadata for embedded development.",
   keywords: [
     "MCU",
     "firmware",
     "package manager",
+    "embedded package manager",
+    "microcontroller package registry",
     "ESP32",
     "STM32",
     "RP2040",
@@ -38,7 +46,38 @@ export const metadata: Metadata = {
     "MicroPython",
     "Zephyr",
     "embedded",
+    "VantaPM",
+    "Vanta",
   ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: siteUrl,
+    siteName: "VantaPM",
+    title: "VantaPM — Universal MCU Package Manager & Registry",
+    description:
+      "Find embedded libraries for ESP32, STM32, RP2040, nRF52, AVR, and more with quality scores, compatibility data, and install-ready package pages.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VantaPM — Universal MCU Package Manager & Registry",
+    description:
+      "Discover embedded firmware libraries with compatibility, quality scores, and install-ready package pages.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  category: "technology",
 };
 
 export default function RootLayout({
@@ -73,7 +112,7 @@ export default function RootLayout({
                 Docs
               </a>
               <a
-                href="https://github.com/Ritesh-9004/Vanta"
+                href="https://github.com/Ritesh-9004/Vantapm"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-colors hover:text-[var(--color-text-primary)]"

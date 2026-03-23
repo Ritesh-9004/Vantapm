@@ -2,13 +2,65 @@ import { SearchBar } from "@/components/SearchBar";
 import { PlatformGrid } from "@/components/PlatformGrid";
 import { FeaturedPackages } from "@/components/FeaturedPackages";
 import { StatsBar } from "@/components/StatsBar";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://vantapm.vercel.app";
+
+export const metadata: Metadata = {
+  title: "VantaPM — Universal MCU Package Manager & Registry",
+  description:
+    "Find firmware libraries for ESP32, STM32, RP2040, nRF52, AVR, and more. Search by platform, compare compatibility, and install with VantaPM.",
+  alternates: {
+    canonical: "/",
+  },
+};
+
 export default function HomePage() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        name: "VantaPM",
+        url: siteUrl,
+        description:
+          "Universal MCU package manager and registry for embedded firmware libraries.",
+        potentialAction: {
+          "@type": "SearchAction",
+          target: `${siteUrl}/packages?q={search_term_string}`,
+          "query-input": "required name=search_term_string",
+        },
+      },
+      {
+        "@type": "SoftwareApplication",
+        name: "VantaPM",
+        applicationCategory: "DeveloperApplication",
+        operatingSystem: "Windows, macOS, Linux",
+        url: siteUrl,
+        downloadUrl: "https://github.com/Ritesh-9004/Vantapm/releases",
+        codeRepository: "https://github.com/Ritesh-9004/Vantapm",
+      },
+      {
+        "@type": "Organization",
+        name: "VantaPM",
+        url: siteUrl,
+        sameAs: [
+          "https://github.com/Ritesh-9004/Vantapm",
+        ],
+      },
+    ],
+  };
+
   return (
     <div className="space-y-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+
       {/* ── Hero Section ─────────────────────────────────── */}
       <section className="flex flex-col items-center pt-12 text-center">
         <h1 className="font-[family-name:var(--font-syne)] text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">

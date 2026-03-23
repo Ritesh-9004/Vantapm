@@ -1,4 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Supported Platforms",
+  description:
+    "Explore embedded libraries by hardware family including ESP32, STM32, RP2040, nRF52, AVR, and SAMD.",
+  alternates: {
+    canonical: "/platforms",
+  },
+};
 
 type FamilySection = {
   id: string;

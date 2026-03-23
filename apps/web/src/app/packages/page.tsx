@@ -1,9 +1,19 @@
 import { SearchBar } from "@/components/SearchBar";
 import { FeaturedPackages } from "@/components/FeaturedPackages";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Browse Packages",
+  description:
+    "Browse firmware libraries in the VantaPM registry by category, framework, platform, and quality score.",
+  alternates: {
+    canonical: "/packages",
+  },
+};
 
 export default function PackagesPage() {
   const categories = ["all", "sensor", "display", "communication", "iot", "motor", "audio", "ai", "security", "power", "filesystem", "protocol", "storage", "utility"];

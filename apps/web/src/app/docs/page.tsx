@@ -1,3 +1,14 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Docs",
+  description:
+    "Get started with the VantaPM CLI, package installation flow, configuration format, and publishing basics.",
+  alternates: {
+    canonical: "/docs",
+  },
+};
+
 export default function DocsPage() {
   return (
     <div className="space-y-8">
