@@ -1,15 +1,26 @@
-# 📦 Vanta
-
 <div align="center">
-	<strong>Universal MCU Package Manager & Registry</strong>
-	<br />
-	<br />
-	<img alt="License" src="https://img.shields.io/badge/license-MIT-blue" />
-	<img alt="Node" src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" />
-	<img alt="Python" src="https://img.shields.io/badge/python-3.10%2B-blue" />
+  <h1>📦 Vantapm</h1>
+  <strong>Universal MCU Package Manager &amp; Registry</strong>
+  <br /><br />
+  <hr />
+
+  <img alt="Version" src="https://img.shields.io/badge/version-0.2.0-blue?style=for-the-badge" />
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" />
+  <img alt="Language" src="https://img.shields.io/badge/language-TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img alt="Runtime" src="https://img.shields.io/badge/runtime-Bun-f9f1e1?style=for-the-badge&logo=bun&logoColor=black" />
+  <img alt="Framework" src="https://img.shields.io/badge/framework-Next.js_15-black?style=for-the-badge&logo=next.js&logoColor=white" />
+  <img alt="Crawler" src="https://img.shields.io/badge/crawler-Python_3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img alt="Database" src="https://img.shields.io/badge/database-PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <br /><br />
+  <a href="https://github.com/Ritesh-9004/Vantapm/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/Ritesh-9004/Vantapm?style=for-the-badge&logo=github&color=yellow" /></a>
+  <a href="https://github.com/Ritesh-9004/Vantapm/issues"><img alt="Issues" src="https://img.shields.io/github/issues/Ritesh-9004/Vantapm?style=for-the-badge&logo=github&color=red" /></a>
+  <a href="https://vantapm.vercel.app"><img alt="Registry" src="https://img.shields.io/badge/registry-live-brightgreen?style=for-the-badge&logo=vercel&logoColor=white" /></a>
+  <a href="https://vantapm.onrender.com/health"><img alt="API" src="https://img.shields.io/badge/API-live-brightgreen?style=for-the-badge&logo=render&logoColor=white" /></a>
+
+  <hr />
 </div>
 
-Find, install, and publish firmware libraries for any microcontroller — ESP32, STM32, RP2040, nRF52, and more.
+### Find, install, and publish firmware libraries for any microcontroller — ESP32, STM32, RP2040, nRF52, and more.
 
 Like [pub.dev](https://pub.dev) (discovery) + [npm](https://www.npmjs.com) (workflow) — but purpose-built for embedded firmware.
 
