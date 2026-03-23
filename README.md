@@ -72,7 +72,11 @@ vanta list
 
 ```
 vanta/
+├── .github/
+│   └── workflows/
+│       └── release.yml → Builds and uploads CLI binaries on tag push
 ├── apps/
+│   ├── cli/         → Vanta CLI (search, install, init, doctor)
 │   ├── web/         → Registry website (Next.js 15, Tailwind CSS)
 │   ├── api/         → REST API (Hono, Bun, Drizzle ORM)
 │   └── crawler/     → GitHub auto-indexer (Python, PyGithub)
