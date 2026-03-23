@@ -7,6 +7,7 @@ export interface ResolvedPackage {
   version: string;
   tarballUrl: string | null;
   sha256: string | null;
+  repositoryUrl: string | null;
   pkg: Package;
 }
 
@@ -39,7 +40,14 @@ export async function resolve(
     const tarballUrl = versionEntry?.tarball_url ?? null;
     const sha256 = versionEntry?.checksum_sha256 ?? null;
 
-    resolved.push({ name, version, tarballUrl, sha256, pkg });
+    resolved.push({
+      name,
+      version,
+      tarballUrl,
+      sha256,
+      repositoryUrl: pkg.repository ?? null,
+      pkg,
+    });
 
     // Recursively resolve dependencies
     const deps = versionEntry?.dependencies ?? {};

@@ -101,7 +101,7 @@ export default async function PackageDetailPage({
           Install
         </h2>
         <div className="mb-3 flex flex-wrap gap-2">
-          {["esp32pm", "Arduino IDE", "ESP-IDF", "PlatformIO"].map((option) => (
+          {["vanta", "Arduino IDE", "ESP-IDF", "PlatformIO"].map((option) => (
             <span
               key={option}
               className="rounded-md border border-[var(--color-border)] px-3 py-1 font-[family-name:var(--font-mono)] text-xs text-[var(--color-text-secondary)]"
@@ -112,7 +112,7 @@ export default async function PackageDetailPage({
         </div>
         <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
           <code className="font-[family-name:var(--font-mono)] text-sm text-[var(--color-accent-green)]">
-            esp32pm install {pkg.name}
+            vanta install {pkg.name}
           </code>
           <button
             type="button"

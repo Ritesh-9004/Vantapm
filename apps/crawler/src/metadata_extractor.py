@@ -25,6 +25,9 @@ RAW_URL = "https://raw.githubusercontent.com/{full_name}/{branch}/{path}"
 _HTTP_DELAY_SECONDS: float = 0.5   # between each file fetch within a repo
 _HTTP_TIMEOUT: float = 10.0        # per-request timeout
 
+_GENERIC_ARDUINO_PLATFORMS: list[str] = ["esp32", "stm32", "rp2040", "nrf52", "avr", "samd"]
+_GENERIC_MCU_PLATFORMS: list[str] = ["esp32", "stm32", "rp2040", "nrf52", "avr", "samd"]
+
 
 @dataclass
 class ExtractedMeta:
@@ -59,13 +62,87 @@ async def _fetch_file(client: httpx.AsyncClient, full_name: str, branch: str, pa
     return None
 
 
+def _unique(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
+def _platforms_from_architectures(raw_value: str) -> list[str]:
+    found: list[str] = []
+    raw_arches = [arch.strip().lower() for arch in raw_value.split(",") if arch.strip()]
+
+    for arch in raw_arches:
+        if arch == "*":
+            found.extend(_GENERIC_ARDUINO_PLATFORMS)
+            continue
+
+        if arch in {"esp32", "esp32s2", "esp32s3", "esp32c3", "esp32c6", "esp32h2", "esp32p4"}:
+            found.append("esp32" if arch.startswith("esp32") and arch != "esp32" else arch)
+            continue
+
+        if arch in {"rp2040", "mbed_rp2040", "rp2350", "pico", "pico-sdk", "picosdk"}:
+            found.append("rp2040" if arch != "rp2350" else "rp2350")
+            continue
+
+        if arch in {"stm32", "stm32duino", "stm32cube"}:
+            found.append("stm32")
+            continue
+
+        if arch in {"nrf52", "nrf5", "nordic", "adafruit_nrf52"}:
+            found.append("nrf52")
+            continue
+
+        if arch in {"avr", "megaavr", "atmega", "attiny"}:
+            found.append("avr")
+            continue
+
+        if arch in {"samd", "samd21", "samd51"}:
+            found.append("samd")
+            continue
+
+        for platform, keywords in config.PLATFORM_INDICATORS.items():
+            if arch == platform or any(kw in arch for kw in keywords):
+                found.append(platform)
+                break
+
+    return _unique(found)
+
+
 def _detect_platforms(text: str, topics: list[str]) -> list[str]:
     combined = (text + " " + " ".join(topics)).lower()
     found = []
     for platform, keywords in config.PLATFORM_INDICATORS.items():
         if any(kw in combined for kw in keywords):
             found.append(platform)
-    return found or ["unknown"]
+
+    if not found:
+        generic_arduino_markers = [
+            "arduino library",
+            "library.properties",
+            "architectures=*",
+            "arduino-library-badge",
+        ]
+        if any(marker in combined for marker in generic_arduino_markers):
+            return _GENERIC_ARDUINO_PLATFORMS.copy()
+
+    if not found:
+        generic_mcu_markers = [
+            "general-purpose mcu",
+            "microcontroller",
+            "development board",
+            "platform independent",
+            "platform-independent",
+            "for mcu",
+        ]
+        if any(marker in combined for marker in generic_mcu_markers):
+            return _GENERIC_MCU_PLATFORMS.copy()
+
+    return _unique(found) or ["unknown"]
 
 
 def _detect_frameworks(text: str, topics: list[str], files_found: list[str]) -> list[str]:
@@ -131,11 +208,8 @@ async def extract_metadata(repo: RawRepo) -> ExtractedMeta:
                 elif line.startswith("category="):
                     meta.category = line.split("=", 1)[1].strip().lower()
                 elif line.startswith("architectures="):
-                    archs = line.split("=", 1)[1].strip().lower().split(",")
-                    for arch in archs:
-                        arch = arch.strip()
-                        if arch in config.PLATFORM_INDICATORS:
-                            meta.platforms.append(arch)
+                    arch_value = line.split("=", 1)[1].strip()
+                    meta.platforms.extend(_platforms_from_architectures(arch_value))
 
         # idf_component.yml (ESP-IDF)
         idf_yml = await _fetch_file(client, repo.full_name, repo.default_branch, "idf_component.yml")
@@ -226,6 +300,8 @@ async def extract_metadata(repo: RawRepo) -> ExtractedMeta:
     combined_text = f"{repo.description} {meta.readme_content} {' '.join(repo.topics)}"
     if not meta.platforms:
         meta.platforms = _detect_platforms(combined_text, repo.topics)
+    else:
+        meta.platforms = _unique(meta.platforms)
     if not meta.frameworks:
         meta.frameworks = _detect_frameworks(combined_text, repo.topics, files_checked)
     if meta.category == "other":

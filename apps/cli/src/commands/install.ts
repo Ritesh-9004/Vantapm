@@ -7,6 +7,22 @@ import { downloadAndExtract } from "../core/downloader.js";
 import { findProjectRoot } from "../utils/paths.js";
 import { log } from "../utils/logger.js";
 
+function normalizeChipFamily(chip: string): string {
+  return chip.startsWith("esp32") ? "esp32" : chip;
+}
+
+function packageSupportsChip(platforms: string[], chip: string): boolean {
+  if (platforms.length === 0 || platforms.includes("unknown")) {
+    return true;
+  }
+
+  const chipFamily = normalizeChipFamily(chip);
+  return platforms.some((platform) => {
+    const normalizedPlatform = normalizeChipFamily(platform);
+    return normalizedPlatform === chipFamily || platform === chip;
+  });
+}
+
 export async function installCommand(packages: string[]) {
   // If no packages specified, install all from vanta.toml
   const config = readConfig();
@@ -73,7 +89,7 @@ export async function installCommand(packages: string[]) {
       const platforms = (r.pkg.platforms ?? []) as string[];
       const frameworks = (r.pkg.frameworks ?? []) as string[];
 
-      if (platforms.length > 0 && !platforms.some((p: string) => p.includes(chip))) {
+      if (!packageSupportsChip(platforms, chip)) {
         log.warn(
           `  ${r.name} may not support ${chip.toUpperCase()} — proceed with caution`
         );
@@ -100,6 +116,7 @@ export async function installCommand(packages: string[]) {
           r.name,
           r.version,
           r.tarballUrl,
+          r.repositoryUrl,
           root
         );
 

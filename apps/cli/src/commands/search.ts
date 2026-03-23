@@ -3,6 +3,49 @@ import ora from "ora";
 import { searchPackages } from "../core/registry.js";
 import { log, qualityBar, pad } from "../utils/logger.js";
 
+function wrapText(text: string, width: number, maxLines = 2): string[] {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (!clean) return [];
+
+  const words = clean.split(" ");
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= width) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) {
+      lines.push(current);
+      if (lines.length === maxLines) {
+        break;
+      }
+      current = word.length > width ? `${word.slice(0, Math.max(width - 1, 1))}…` : word;
+    } else {
+      lines.push(`${word.slice(0, Math.max(width - 1, 1))}…`);
+      if (lines.length === maxLines) {
+        break;
+      }
+    }
+  }
+
+  if (lines.length < maxLines && current) {
+    lines.push(current);
+  }
+
+  const consumedWords = lines.join(" ").replace(/…$/, "").split(" ").filter(Boolean).length;
+  if (consumedWords < words.length && lines.length > 0) {
+    const lastIndex = lines.length - 1;
+    const last = lines[lastIndex];
+    lines[lastIndex] = last.length >= width ? `${last.slice(0, Math.max(width - 1, 1))}…` : `${last}…`;
+  }
+
+  return lines;
+}
+
 export async function searchCommand(
   query: string,
   options: { platform?: string; framework?: string }
@@ -29,7 +72,8 @@ export async function searchCommand(
     console.log();
 
     // Table header
-    const divider = chalk.dim("─".repeat(72));
+    const terminalWidth = process.stdout.columns ?? 100;
+    const divider = chalk.dim("─".repeat(Math.max(72, Math.min(terminalWidth - 2, 100))));
     console.log(divider);
 
     for (const pkg of result.data) {
@@ -43,9 +87,10 @@ export async function searchCommand(
       console.log(`  ${name} ${score}  ${platforms}`);
 
       if (pkg.description) {
-        console.log(
-          `  ${chalk.dim(pkg.description.slice(0, 65))}`
-        );
+        const descriptionWidth = Math.max(44, Math.min(terminalWidth - 6, 92));
+        for (const line of wrapText(pkg.description, descriptionWidth, 2)) {
+          console.log(`  ${chalk.dim(line)}`);
+        }
       }
 
       const meta: string[] = [];

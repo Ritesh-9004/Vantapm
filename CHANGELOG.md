@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-03-23
+
+### Added
+
+#### CLI (`apps/cli`)
+- Interactive `vanta init` wizard with project folder selection, MCU family, board, framework, language, and firmware target prompts
+- Branded CLI banner/help output with examples
+- `vanta doctor` command for registry/API connectivity diagnostics
+- Default hosted registry support via Render API with local override through `VANTA_REGISTRY`
+- End-to-end `vanta install` flow with `vanta.toml` + `vanta.lock` updates and include hints
+- Real package source download fallback from GitHub archives when registry tarballs are missing
+
+### Changed
+
+#### CLI (`apps/cli`)
+- `vanta.toml` serialization now writes `[dependencies]` last for stable project config ordering
+- Search results wrap long descriptions instead of truncating them aggressively
+- Package detail install command uses `vanta install ...` branding consistently
+
+#### Crawler (`apps/crawler`)
+- Improved platform detection from `library.properties` architectures and README hints for generic Arduino/MCU libraries
+- Added repository discovery filtering to exclude config-file false positives like `.config`
+
+### Fixed
+
+#### Data / Registry
+- Refreshed live metadata so packages like `dht-sensor-library` and `ds18b20` no longer show `UNKNOWN` platforms
+- Removed `.config` false-positive package from hosted search results
+
 ## [0.1.0] — 2026-03-22
 
 ### 🎉 Initial Release

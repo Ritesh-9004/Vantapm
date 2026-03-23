@@ -40,6 +40,24 @@ POLITE_DELAY_SECONDS: float = 3.0   # wait between search queries (30 req/min li
 RATE_LIMIT_BUFFER: int = 100        # pause if remaining requests drop below this
 MAX_BACKOFF_SECONDS: float = 120.0  # exponential backoff ceiling
 
+_LIBRARY_POSITIVE_MARKERS = (
+    "library",
+    "driver",
+    "sensor",
+    "component",
+    "module",
+    "sdk",
+    "firmware",
+)
+
+_FALSE_POSITIVE_MARKERS = (
+    "automatically generated file",
+    "do not edit",
+    "configuration",
+    "config file",
+    "openwrt configuration",
+)
+
 
 def _wait_for_rate_limit(gh: Github, resource: str = "search") -> None:
     """Block until GitHub rate limit resets if we're running low."""
@@ -122,6 +140,29 @@ def _repo_to_raw(repo: Repository) -> RawRepo:
     )
 
 
+def _looks_like_library(repo: Repository) -> bool:
+    name = (repo.name or "").strip().lower()
+    description = (repo.description or "").strip().lower()
+
+    if not name:
+        return False
+
+    if name.startswith("."):
+        logger.debug("Skipping hidden/config-style repo: %s", repo.full_name)
+        return False
+
+    if name in {".config", "config", "settings"}:
+        logger.debug("Skipping non-library repo by name: %s", repo.full_name)
+        return False
+
+    if any(marker in description for marker in _FALSE_POSITIVE_MARKERS):
+        if not any(marker in description for marker in _LIBRARY_POSITIVE_MARKERS):
+            logger.debug("Skipping config-like repo by description: %s", repo.full_name)
+            return False
+
+    return True
+
+
 def discover_repos() -> list[RawRepo]:
     """
     Run all configured search queries against GitHub's API and return a
@@ -175,6 +216,8 @@ def discover_repos() -> list[RawRepo]:
                     if len(results) >= config.MAX_REPOS_PER_RUN:
                         break
                     if repo.full_name in seen or repo.archived:
+                        continue
+                    if not _looks_like_library(repo):
                         continue
                     try:
                         raw_repo = _repo_to_raw(repo)
