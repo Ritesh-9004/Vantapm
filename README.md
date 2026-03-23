@@ -1,6 +1,6 @@
 <div align="center">
-  <h1>📦 Vantapm</h1>
-  <strong>Universal MCU Package Manager &amp; Registry</strong>
+  <h1>📦 VantaPM</h1>
+  <strong>Universal MCU package manager &amp; registry</strong>
   <br /><br />
   <hr />
 
@@ -23,6 +23,48 @@
 ### Find, install, and publish firmware libraries for any microcontroller — ESP32, STM32, RP2040, nRF52, and more.
 
 Like [pub.dev](https://pub.dev) (discovery) + [npm](https://www.npmjs.com) (workflow) — but purpose-built for embedded firmware.
+
+---
+
+## Who should follow which steps?
+
+- **End users (recommended path):** Use the prebuilt CLI binary from GitHub Releases. No Node.js, Bun, Docker, or repo clone required.
+- **Contributors/maintainers:** Use the monorepo setup below to run web, API, crawler, and database locally.
+
+## End User CLI Setup (No Repo Clone)
+
+### 1. Download the CLI binary
+
+Go to [Releases](https://github.com/Ritesh-9004/Vantapm/releases) and download the latest asset for your OS:
+
+- **Windows:** `vanta.exe`
+- **macOS:** `vanta`
+- **Linux:** `vanta-linux`
+
+### 2. Put it in your PATH
+
+- **Windows:** place `vanta.exe` in a folder like `C:\Tools\vanta\` and add that folder to PATH.
+- **macOS/Linux:** move binary to `/usr/local/bin/vanta` and make it executable.
+
+```bash
+chmod +x vanta
+sudo mv vanta /usr/local/bin/vanta
+```
+
+### 3. Use the CLI
+
+```bash
+vanta doctor
+vanta init
+vanta search bme280 --platform esp32
+vanta install bblanchon/ArduinoJson
+vanta list
+```
+
+### Is `.exe` ready right now?
+
+- The automation is ready in [.github/workflows/release.yml](.github/workflows/release.yml).
+- `vanta.exe` is attached automatically when a new tag (for example `v0.2.1`) is pushed.
 
 ---
 
@@ -57,17 +99,19 @@ vanta/
 - **Version detection** — from manifests (`library.properties`, `idf_component.yml`) and GitHub releases
 - **Framework awareness** — Arduino, ESP-IDF, MicroPython, Zephyr, bare-metal
 
-## Prerequisites
+## Contributor Setup (Monorepo)
+
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) ≥ 20
 - [pnpm](https://pnpm.io/) ≥ 10
 - [Bun](https://bun.sh/) (for the API)
 - [Python](https://www.python.org/) ≥ 3.10 (for the crawler)
-- [Docker](https://www.docker.com/) (for PostgreSQL)
+- [Docker](https://www.docker.com/) (optional, only if you want local PostgreSQL)
 
-## Quick Start
+### Quick Start
 
-### 1. Clone & install
+#### 1. Clone & install
 
 ```bash
 git clone https://github.com/Ritesh-9004/Vantapm.git
@@ -75,15 +119,18 @@ cd vanta
 pnpm install
 ```
 
-### 2. Start the database
+#### 2. Configure the database
 
 ```bash
+# Option A (local PostgreSQL via Docker)
 docker compose up -d
 ```
 
-This spins up PostgreSQL 16 on port `5432` (user: `postgres`, password: `dev`, database: `vanta`).
+Local mode spins up PostgreSQL 16 on port `5432` (user: `postgres`, password: `dev`, database: `vanta`).
 
-### 3. Set up environment variables
+If you're using a hosted database (for example Neon), skip Docker and set `DATABASE_URL` in `apps/api/.env` to your hosted connection string.
+
+#### 3. Set up environment variables
 
 ```bash
 # API
@@ -99,13 +146,13 @@ cp apps/crawler/.env.example apps/crawler/.env
 
 > **GitHub Token**: Create a [Personal Access Token (Classic)](https://github.com/settings/tokens) with scopes: `public_repo`, `read:org`, `read:user`.
 
-### 4. Push the database schema
+#### 4. Push the database schema
 
 ```bash
 pnpm db:push
 ```
 
-### 5. Run the crawler (one-time seed)
+#### 5. Run the crawler (one-time seed)
 
 ```bash
 cd apps/crawler
@@ -115,7 +162,7 @@ python main.py
 
 The crawler discovers up to 50 MCU libraries from GitHub per run (configurable). It auto-stops after 10 minutes maximum.
 
-### 6. Start the dev server
+#### 6. Start local services
 
 ```bash
 # From the repo root
